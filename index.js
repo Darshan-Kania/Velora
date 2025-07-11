@@ -29,7 +29,7 @@ app.use("/auth",authRoute)
 app.use("/webhook", require("./routes/webhook"));
 // Listener
 app.listen(80,'0.0.0.0',() => {
-  console.log(`Server is running on port ${process.env.PORT}`);
+  console.log(`Server is running on port 80`);
 });
 
  
