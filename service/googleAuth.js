@@ -1,6 +1,7 @@
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const watchGmailInbox=require("./watchGmail");
+const logger = require("../utils/logger");
 passport.use(
   new GoogleStrategy(
     {
