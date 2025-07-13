@@ -1,4 +1,5 @@
 const { google } = require("googleapis");
+const logger = require("../utils/logger");
 async function watchGmailInbox(accessToken) {
   const auth = new google.auth.OAuth2();
   auth.setCredentials({ access_token: accessToken });
