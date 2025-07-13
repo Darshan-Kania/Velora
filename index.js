@@ -4,6 +4,7 @@ const cors = require("cors");
 const session = require("express-session");
 const passport = require("passport");
 const authRoute=require("./routes/auth")
+const logger = require("./utils/logger");
 require("dotenv").config();
 require("./service/googleAuth"); 
 // Initialize Express app
@@ -29,7 +30,7 @@ app.use("/auth",authRoute)
 app.use("/webhook", require("./routes/webhook"));
 // Listener
 app.listen(process.env.PORT,() => {
-  console.log(`Server is running on port ${process.env.PORT}`);
+  logger.info(`Server is running on port ${process.env.PORT}`);
 });
   
  

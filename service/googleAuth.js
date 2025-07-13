@@ -16,6 +16,7 @@ passport.use(
         accessToken,
         refreshToken,
       };
+      logger.info(`User authenticated: ${user.email}`);
       return done(null, user);
     }
   )

@@ -14,7 +14,7 @@ async function watchGmailInbox(accessToken) {
     },
   });
 
-  console.log("✅ Gmail watch started:", res.data);
+  logger.info("✅ Gmail watch started:", res.data);
   return res.data;
 }
 module.exports = watchGmailInbox;
