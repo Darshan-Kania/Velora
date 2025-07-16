@@ -9,7 +9,7 @@ async function watchGmailInbox(accessToken) {
   const res = await gmail.users.watch({
     userId: "me",
     requestBody: {
-      topicName: "projects/mailflare-465412/topics/mailflareGmail",
+      topicName: "projects/mailflare-465412/topics/MailFlare-Gmail",
       labelIds: ["INBOX"],
     },
   });
