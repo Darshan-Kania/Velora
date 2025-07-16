@@ -24,7 +24,7 @@ async function watchGmailInbox(accessToken) {
         labelIds: ["INBOX"], // optional: limit to specific labels
       },
     });
-    logger.info(response, { depth: null, colors: true });
+    logger.info("✅ Gmail watch full response:", JSON.stringify(response, null, 2));
     const data = response.data;
 
     logger.info("✅ Gmail watch started successfully");
