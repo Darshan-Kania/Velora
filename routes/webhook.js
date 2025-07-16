@@ -15,7 +15,7 @@ router.post("/newEmail", async (req, res) => {
     decodedData = JSON.parse(Buffer.from(pubsubMessage.data, "base64").toString("utf-8"));
   } catch (err) {
     logger.error("❌ Failed to decode or parse message data:", err);
-    return res.status(400).send("Invalid JSON in data");
+    return res.status(200).send("Invalid JSON in data");
   }
 
   logger.info("📨 Gmail Webhook Fired!");
