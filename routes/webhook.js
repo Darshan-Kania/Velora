@@ -11,7 +11,7 @@ router.post("/newEmail", async (req, res) => {
   const decoded = Buffer.from(pubsubMessage.data, "base64").toString("utf-8");
 
   logger.info("📨 Gmail Webhook Fired!");
-  logger.info("🔓 Decoded Data:", decoded);
+  logger.info("🔓 Decoded Data:", JSON.stringify(decoded, null, 2));
   res.status(200).send("Recieved");
 });
 
