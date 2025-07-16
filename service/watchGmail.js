@@ -13,7 +13,10 @@ async function watchGmailInbox(accessToken) {
       labelIds: ["INBOX"],
     },
   });
-  logger.info(res.json());
+  if (res.status !== 200) {
+    logger.error("Failed to start Gmail watch:", res.status, res.statusText);
+    throw new Error(`Failed to start Gmail watch: ${res.statusText}`);
+  }
   logger.info("✅ Gmail watch started:", res.data);
   return res.data;
 }
