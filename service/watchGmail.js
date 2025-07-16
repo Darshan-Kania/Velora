@@ -11,11 +11,10 @@ async function watchGmailInbox(accessToken) {
     requestBody: {
       topicName: "projects/mailflare-465412/topics/mailflareGmail",
       labelIds: ["INBOX"],
-      labelFilterAction: "include",
     },
   });
 
   logger.info("✅ Gmail watch started:", res.data);
   return res.data;
-} 
+}
 module.exports = watchGmailInbox;
