@@ -13,7 +13,7 @@ async function watchGmailInbox(accessToken) {
       labelIds: ["INBOX"],
     },
   });
-
+  logger.info(res);
   logger.info("✅ Gmail watch started:", res.data);
   return res.data;
 }
