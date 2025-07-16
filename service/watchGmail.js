@@ -40,3 +40,4 @@ async function watchGmailInbox(accessToken) {
     throw err;
   }
 }
+module.exports = watchGmailInbox;
