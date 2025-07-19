@@ -1,0 +1,57 @@
+# Node dependencies
+node_modules/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pm2.log
+
+# Debug
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Optional runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Build output
+dist/
+build/
+
+# Coverage reports
+coverage/
+
+# Database dumps or temp files
+dump/
+tmp/
+*.bak
+
+# n8n (if integrated)
+.n8n/
+
+# JetBrains IDEs
+.idea/
+
+# Optional Docker-related (if using in future)
+docker-compose.override.yml
+
+# Backup files
+*.orig
+*.old
