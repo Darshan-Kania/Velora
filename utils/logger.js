@@ -1,11 +1,12 @@
 const winston = require('winston');
 require('winston-daily-rotate-file');
+const moment = require('moment-timezone');
 
-// Log format
-const logFormat = winston.format.combine(
-  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-  winston.format.printf(info => `[${info.timestamp}] ${info.level.toUpperCase()}: ${info.message}`)
-);
+// Log format with IST timezone
+const logFormat = winston.format.printf(info => {
+  const timestampIST = moment().tz('Asia/Kolkata').format('YYYY-MM-DD HH:mm:ss');
+  return `[${timestampIST}] ${info.level.toUpperCase()}: ${info.message}`;
+});
 
 // Daily rotating file transport for general logs
 const rotateTransport = new winston.transports.DailyRotateFile({
@@ -37,5 +38,6 @@ const logger = winston.createLogger({
   exceptionHandlers: [exceptionTransport],
   rejectionHandlers: [exceptionTransport]
 });
-// Export the logger
+
+//Export the logger instance
 module.exports = logger;
