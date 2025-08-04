@@ -27,7 +27,6 @@ router.get(
     failureRedirect: "/auth/failure",
   }),
   (req, res) => {
-    // Successful authentication, redirect or respond with user data
     res.json({
       success: true,
       message: "Authentication successful",
@@ -35,5 +34,12 @@ router.get(
     });
   }
 );
+
+router.get("/failure", (req, res) => {
+  res.status(401).json({
+    success: false,
+    message: "Authentication failed",
+  });
+});
 
 module.exports = router;
