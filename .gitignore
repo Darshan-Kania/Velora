@@ -55,3 +55,6 @@ docker-compose.override.yml
 # Backup files
 *.orig
 *.old
+
+# SetupFiles
+GoogleClientSecret.json
