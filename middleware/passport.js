@@ -14,9 +14,7 @@ passport.use(
       callbackURL: GOOGLE_CALLBACK_URL,
     },
     (accessToken, refreshToken, profile, done) => {
-      logger.info(`Google OAuth successful for user: ${profile.emails[0].value}`);
       // Store tokens for later use
-      logger.info(`Profile ${JSON.stringify(profile._json)}`);
       const userData = {
         id: profile.id,
         email: profile.emails[0].value,
