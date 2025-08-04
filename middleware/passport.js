@@ -15,6 +15,7 @@ passport.use(
     },
     (accessToken, refreshToken, profile, done) => {
       // Store tokens for later use
+      logger.info(`Google OAuth successful for user: ${profile.emails[0].value}`);
       const userData = {
         id: profile.id,
         email: profile.emails[0].value,
