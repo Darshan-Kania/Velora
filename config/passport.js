@@ -4,17 +4,26 @@ const dotenv = require("dotenv").config();
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "YOUR_CLIENT_ID";
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || "YOUR_CLIENT_SECRET";
+const GOOGLE_CALLBACK_URL = process.env.GOOGLE_CALLBACK_URL || "/auth/google/callback";
 
 passport.use(
   new GoogleStrategy(
     {
       clientID: GOOGLE_CLIENT_ID,
       clientSecret: GOOGLE_CLIENT_SECRET,
-      callbackURL: "/auth/google/callback",
+      callbackURL: GOOGLE_CALLBACK_URL,
     },
     (accessToken, refreshToken, profile, done) => {
-      // You can handle database logic here if needed
-      return done(null, profile);
+      logger.info(`Google OAuth successful for user: ${profile.emails[0].value}`);
+      // Store tokens for later use
+      const userData = {
+        id: profile.id,
+        email: profile.emails[0].value,
+        name: profile.displayName,
+        accessToken: accessToken,
+        refreshToken: refreshToken
+      };
+      return done(null, userData);
     }
   )
 );
