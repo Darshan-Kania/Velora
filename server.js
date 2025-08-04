@@ -1,7 +1,7 @@
 const express = require('express');
 const passport = require('passport');
 const logger = require('./utils/logger');
-require('./config/passport'); // ✅ Google OAuth Strategy setup
+require('./middleware/passport'); // ✅ Google OAuth Strategy setup
 
 const authRouter = require('./routes/authRoutes');
 
