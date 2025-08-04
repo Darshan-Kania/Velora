@@ -1,6 +1,5 @@
 const express = require("express");
 const passport = require("passport");
-const { handleGoogleCallback } = require("../controllers/authController");
 
 const router = express.Router();
 
@@ -27,7 +26,14 @@ router.get(
     session: false,
     failureRedirect: "/auth/failure",
   }),
-  handleGoogleCallback
+  (req, res) => {
+    // Successful authentication, redirect or respond with user data
+    res.json({
+      success: true,
+      message: "Authentication successful",
+      user: req.user,
+    });
+  }
 );
 
 module.exports = router;
