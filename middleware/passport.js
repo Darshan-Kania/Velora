@@ -3,9 +3,9 @@ const logger = require("../utils/logger");
 const { log } = require("winston");
 const dotenv = require("dotenv").config();
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "YOUR_CLIENT_ID";
-const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || "YOUR_CLIENT_SECRET";
-const GOOGLE_CALLBACK_URL = process.env.GOOGLE_CALLBACK_URL || "/auth/google/callback";
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID ;
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET ;
+const GOOGLE_CALLBACK_URL = process.env.GOOGLE_CALLBACK_URL ;
 
 passport.use(
   new GoogleStrategy(
