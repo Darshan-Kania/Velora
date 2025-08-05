@@ -1,4 +1,5 @@
 const watchGmailInbox = require('../services/watchGmailInbox');
+const logger = require('../utils/logger');
 
 exports.googleAuthController = async (req, res) => {
   try {
