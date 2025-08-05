@@ -22,10 +22,44 @@ app.get('/', (req, res) => {
   logger.info('Handled request for /');
 });
 
+// Global error handler middleware
+app.use((err, req, res, next) => {
+  logger.error('Unhandled error:', err);
+  if (!res.headersSent) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Start server
-app.listen(8000, () => {
+const server = app.listen(8000, () => {
   console.log('Server is running on port 8000');
   logger.info('Server started on port 8000');
+});
+
+// Handle server errors
+server.on('error', (error) => {
+  if (error.code === 'EPIPE') {
+    // Ignore EPIPE errors
+    return;
+  }
+  logger.error('Server error:', error);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM received, shutting down gracefully');
+  server.close(() => {
+    logger.info('Server closed');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  logger.info('SIGINT received, shutting down gracefully');
+  server.close(() => {
+    logger.info('Server closed');
+    process.exit(0);
+  });
 });
 
 module.exports = app;

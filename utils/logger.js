@@ -27,16 +27,45 @@ const exceptionTransport = new winston.transports.DailyRotateFile({
   maxFiles: '30d'
 });
 
+// Create console transport with error handling
+const consoleTransport = new winston.transports.Console({
+  handleExceptions: false,
+  handleRejections: false
+});
+
+// Handle EPIPE errors on console transport
+consoleTransport.on('error', (err) => {
+  if (err.code === 'EPIPE') {
+    // Ignore EPIPE errors (broken pipe)
+    return;
+  }
+  console.error('Console transport error:', err);
+});
+
 // Logger instance
 const logger = winston.createLogger({
   level: 'info',
   format: logFormat,
   transports: [
     rotateTransport,
-    new winston.transports.Console()
+    consoleTransport
   ],
   exceptionHandlers: [exceptionTransport],
-  rejectionHandlers: [exceptionTransport]
+  rejectionHandlers: [exceptionTransport],
+  exitOnError: false // Don't exit on handled exceptions
+});
+
+// Handle uncaught exceptions and unhandled rejections more gracefully
+process.on('uncaughtException', (error) => {
+  if (error.code === 'EPIPE') {
+    // Ignore EPIPE errors
+    return;
+  }
+  logger.error('Uncaught Exception:', error);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
 //Export the logger instance
