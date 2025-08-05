@@ -1,6 +1,7 @@
 const express = require("express");
 const passport = require("passport");
-
+const googleAuthController= require("../controllers/googleAuthController");
+const logger = require("../utils/logger");
 const router = express.Router();
 
 // Start Google OAuth flow
@@ -20,22 +21,11 @@ router.get(
 );
 
 // Handle Google OAuth callback
-router.get(
-  "/google/callback",
-  passport.authenticate("google", {
-    session: false,
-    failureRedirect: "/auth/failure",
-  }),
-  (req, res) => {
-    res.json({
-      success: true,
-      message: "Authentication successful",
-      user: req.user,
-    });
-  }
-);
+router.get("/google/callback", passport.authenticate("google", { session: false }), googleAuthController);
+
 
 router.get("/failure", (req, res) => {
+  logger.error("Google OAuth failed");
   res.status(401).json({
     success: false,
     message: "Authentication failed",
