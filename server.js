@@ -7,7 +7,11 @@ const authRouter = require('./routes/GoogleauthRoutes');
 const gmailRouter = require('./routes/GmailRoutes'); 
 
 const app = express();
-
+// Logger Middleware
+app.use((req,res,next)=>{
+  logger.info("Handling Request from: "+req.url)
+  next();
+})
 // Middleware
 app.use(passport.initialize());
 app.use(express.json());
@@ -19,7 +23,6 @@ app.use('/gmail', gmailRouter);
 
 app.get('/', (req, res) => {
   res.send('Hello, World!');
-  logger.info('Handled request for /');
 });
 
 // Global error handler middleware
