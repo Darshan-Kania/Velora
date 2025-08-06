@@ -10,7 +10,7 @@ const getHistoryEvents = async (email, historyId) => {
     // }
 
     const auth = new google.auth.OAuth2();
-    auth.setCredentials({ access_token: tokens.access_token });
+    auth.setCredentials({ access_token: tokens });
 
     const gmail = google.gmail({ version: 'v1', auth });
 
