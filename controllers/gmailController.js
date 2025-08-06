@@ -1,5 +1,6 @@
 const { google } = require('googleapis');
 const logger = require('../utils/logger');
+const {getHistoryEvents}=require("../services/gmailService")
 exports.registerGmailWatch = async (req, res) => {
   try {
     const accessToken = req.user.accessToken; // get from DB or JWT
@@ -39,21 +40,31 @@ exports.handleNotification = async (req, res) => {
       return res.status(400).send('Invalid Pub/Sub message');
     }
 
+    // ✅ Send ACK immediately — very important!
     res.status(200).send('OK');
-    // Decode base64-encoded message
+
+    // ✅ Decode and parse
     const data = Buffer.from(message.data, 'base64').toString('utf-8');
     const parsed = JSON.parse(data);
-
     const historyId = parsed.historyId;
     const emailAddress = parsed.emailAddress;
 
     logger.info(`📨 Gmail Notification: historyId=${historyId}, email=${emailAddress}`);
 
-    // TODO: Fetch new emails using Gmail History API
-    // and trigger your AI summarizer/n8n
-    
+    // ✅ Handle async processing separately (no await)
+    processGmailHistory(emailAddress, historyId);
   } catch (error) {
     logger.error('❌ Notification handler error:', error);
-    return res.status(500).send('Internal Server Error');
+    // DO NOT return 500 or Gmail will retry
+    res.status(200).send('OK'); // Still ACK
+  }
+};
+
+// ✅ Async helper (non-blocking)
+const processGmailHistory = async (email, historyId) => {
+  try {
+    await getHistoryEvents(email, historyId);
+  } catch (err) {
+    logger.error(`❌ Error processing Gmail history for ${email}:`, err);
   }
 };

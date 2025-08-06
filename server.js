@@ -12,6 +12,12 @@ app.use((req,res,next)=>{
   logger.info("Handling Request from: "+req.url)
   next();
 })
+app.use((req, res, next) => {
+  if(req.originalUrl!='mailflare.tech')
+    res.status(404).json({ error: 'Not Found' });
+  else
+    next();
+});
 // Middleware
 app.use(passport.initialize());
 app.use(express.json());
