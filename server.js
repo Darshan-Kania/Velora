@@ -12,7 +12,7 @@ app.use((req,res,next)=>{
   logger.info("Handling Request from: "+req.url)
   next();
 })
-  
+
 // Middleware
 app.use(passport.initialize());
 app.use(express.json());

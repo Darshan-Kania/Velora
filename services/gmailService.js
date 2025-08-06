@@ -1,7 +1,6 @@
 const { google } = require('googleapis');
 const logger = require('../utils/logger');
-const { getUserTokens } = require('../utils/tokenManager'); // ← replace with your method
-require('dotenv').config(); // Load environment variables
+require("dotenv").config();
 const getHistoryEvents = async (email, historyId) => {
   try {
     const tokens = process.env.DUMMY_ACCESS_TOKEN; // ⬅️ Get access_token from DB
