@@ -7,6 +7,12 @@ const authRouter = require('./routes/GoogleauthRoutes');
 const gmailRouter = require('./routes/GmailRoutes'); 
 
 const app = express();
+app.use((req,res,next)=>{
+  if(req.originalUrl!='mailflare.tech')
+    return res.status(404).send('Not Found');
+  else
+    next();
+})
 // Logger Middleware
 app.use((req,res,next)=>{
   logger.info("Handling Request from: "+req.url)
