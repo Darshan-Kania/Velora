@@ -33,30 +33,35 @@ exports.registerGmailWatch = async (req, res) => {
 };
 exports.handleNotification = async (req, res) => {
   try {
+    logger.info('📥 Received Pub/Sub notification');
+    logger.info('Request body:', JSON.stringify(req.body, null, 2));
+    
+    // Send immediate ACK to prevent timeouts
+    res.status(200).send('OK');
+    
     const message = req.body.message;
 
     if (!message || !message.data) {
-      logger.error('❌ Invalid Pub/Sub message');
-      return res.status(400).send('Invalid Pub/Sub message');
+      logger.error('❌ Invalid Pub/Sub message - missing message.data');
+      return;
     }
 
-    // ✅ Send ACK immediately — very important!
-    res.status(200).send('OK');
-
-    // ✅ Decode and parse
+    // Decode base64-encoded message
     const data = Buffer.from(message.data, 'base64').toString('utf-8');
+    logger.info('📄 Decoded Pub/Sub data:', data);
+    
     const parsed = JSON.parse(data);
     const historyId = parsed.historyId;
     const emailAddress = parsed.emailAddress;
 
     logger.info(`📨 Gmail Notification: historyId=${historyId}, email=${emailAddress}`);
 
-    // ✅ Handle async processing separately (no await)
-    processGmailHistory(emailAddress, historyId);
+    // TODO: Fetch new emails using Gmail History API
+    // and trigger your AI summarizer/n8n
+
   } catch (error) {
     logger.error('❌ Notification handler error:', error);
-    // DO NOT return 500 or Gmail will retry
-    res.status(200).send('OK'); // Still ACK
+    // Already sent 200 OK above, so don't send another response
   }
 };
 
