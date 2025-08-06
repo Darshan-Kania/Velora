@@ -12,7 +12,7 @@ const logFormat = winston.format.printf(info => {
 const rotateTransport = new winston.transports.DailyRotateFile({
   filename: 'logs/app-%DATE%.log',
   datePattern: 'YYYY-MM-DD',
-  zippedArchive: true,
+  zippedArchive: false,
   maxSize: '10m',
   maxFiles: '14d',
   level: 'info' // handles info, warn, error etc.
@@ -22,7 +22,7 @@ const rotateTransport = new winston.transports.DailyRotateFile({
 const exceptionTransport = new winston.transports.DailyRotateFile({
   filename: 'logs/exceptions-%DATE%.log',
   datePattern: 'YYYY-MM-DD',
-  zippedArchive: true,
+  zippedArchive: false,
   maxSize: '5m',
   maxFiles: '30d'
 });
