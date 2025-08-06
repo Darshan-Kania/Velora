@@ -1,7 +1,4 @@
-const express = require('express');
-const logger = require('./utils/logger');
-
-const app = express();
+const {app,logger,express}=require('./index');
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -14,12 +11,10 @@ app.use((req,res,next) => {
 });
 
 app.get('/', (req, res) => {
-  res.send('Hello, World!');
+  res.send('Hello, World!').status(200);
 });
 
 // Start server
 app.listen(8000, () => {
   logger.info('Server started on port 8000');
 });
-
-module.exports = app;
