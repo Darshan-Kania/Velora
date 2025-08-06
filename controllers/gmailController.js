@@ -39,6 +39,7 @@ exports.handleNotification = async (req, res) => {
       return res.status(400).send('Invalid Pub/Sub message');
     }
 
+    res.status(200).send('OK');
     // Decode base64-encoded message
     const data = Buffer.from(message.data, 'base64').toString('utf-8');
     const parsed = JSON.parse(data);
@@ -50,8 +51,7 @@ exports.handleNotification = async (req, res) => {
 
     // TODO: Fetch new emails using Gmail History API
     // and trigger your AI summarizer/n8n
-
-    return res.status(200).send('OK');
+    
   } catch (error) {
     logger.error('❌ Notification handler error:', error);
     return res.status(500).send('Internal Server Error');
