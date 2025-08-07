@@ -21,7 +21,6 @@ passport.use(
           _profile: profile,
           email: profile.emails[0].value,
         };
-        logger.info(`User Authenticated: ${userData.email}`);
         done(null, userData);
       } catch (error) {
         logger.error("Error authenticating user:", error);
