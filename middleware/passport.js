@@ -3,7 +3,7 @@ const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const { logger } = require("../utils/logger");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
-
+// Initialize Passport with Google OAuth strategy
 passport.use(
   new GoogleStrategy(
     {

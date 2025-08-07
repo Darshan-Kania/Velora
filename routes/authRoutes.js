@@ -5,7 +5,7 @@ const { logger } = require("../utils/logger");
 require("dotenv").config();
 
 const router = express.Router();
-
+// Initiated when /auth/google is hit and the user wants to authenticate via Google
 router.get(
   "/google",
   (req, res, next) => {
@@ -24,7 +24,9 @@ router.get(
     prompt: "consent",
   })
 );
-
+// Callback route for Google to redirect to after authentication
+// This is where the user will be redirected after successful authentication
+// It will handle the JWT generation and send it back to the client
 router.get(
   "/google/callback",
   (req, res, next) => {
@@ -56,7 +58,7 @@ router.get(
     }
   }
 );
-
+// Error handling route for unauthorized access
 router.get("/error401", (req, res) => {
   logger.warn("❌ Google OAuth failed - Redirected to /error401");
   res.status(401).send("Unauthorized");
