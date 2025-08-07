@@ -27,6 +27,12 @@ app.use("/auth", authRoutes);
 app.get("/", (req, res) => {
   res.send("Hello World").status(200);
 });
+
+
+app.use((err, req, res, next) => {
+  logger.error(`Unhandled error: ${err.stack || err.message || err}`);
+  res.status(500).send("Internal Server Error");
+});
 app.listen(process.env.PORT, () => {
   logger.info(`Server is running on port ${process.env.PORT}`);
 });

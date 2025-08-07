@@ -22,5 +22,8 @@ router.get('/google/callback', passport.authenticate('google', { failureRedirect
   logger.info(`User ${req.user.email} authenticated successfully`);
   res.redirect('/');
 });
-
+router.get('/error401', (req, res) => {
+  logger.warn("❌ Google OAuth failed");
+  res.status(401).send("Unauthorized");
+}); 
 module.exports = {router};
