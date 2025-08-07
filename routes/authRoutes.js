@@ -34,7 +34,10 @@ router.get(
     logger.info("⬅️ Google OAuth callback triggered");
     next();
   },
-  passport.authenticate("google", { session: false, failureRedirect: "/auth/error401" }),
+  passport.authenticate("google", {
+    session: false,
+    failureRedirect: "/auth/error401",
+  }),
   (req, res) => {
     try {
       logger.info("✅ Google OAuth success for user: " + req.user.email);
@@ -47,18 +50,39 @@ router.get(
         process.env.JWT_SECRET,
         { expiresIn: "7d" }
       );
-
-      logger.info("🔐 JWT generated for user: " + req.user.email);
-      const newUser= new userModel({
-        userId: req.user.id,
-        email: req.user.email,
-        name: req.user.name,
-        accessToken: req.user.accessToken,
-        refreshToken: req.user.refreshToken,
-      });
-      newUser.save()
-        .then(() => logger.info("✅ User saved to database: " + req.user.email))
-        .catch(err => logger.error("❌ Error saving user to database: " + err.message));
+      if (userModel.findOne({ email: req.user.email })) {
+        logger.info("✅ User already exists in database: " + req.user.email);
+        userModel.updateOne(
+          { email: req.user.email },
+          {
+            accessToken: req.user.accessToken,
+            refreshToken: req.user.refreshToken,
+            jwtToken: token,
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+          }
+        );
+      } else {
+        logger.info(
+          "🔄 New user detected, saving to database: " + req.user.email
+        );
+        logger.info("🔐 JWT generated for user: " + req.user.email);
+        const newUser = new userModel({
+          email: req.user.email,
+          name: req.user.name,
+          accessToken: req.user.accessToken,
+          refreshToken: req.user.refreshToken,
+          jwtToken: token,
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+        });
+        newUser
+          .save()
+          .then(() =>
+            logger.info("✅ User saved to database: " + req.user.email)
+          )
+          .catch((err) =>
+            logger.error("❌ Error saving user to database: " + err.message)
+          );
+      }
       res.status(200).json({
         message: "Authentication successful",
         token,

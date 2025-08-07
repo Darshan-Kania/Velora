@@ -1,7 +1,6 @@
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const { logger } = require("../utils/logger");
-const jwt = require("jsonwebtoken");
 require("dotenv").config();
 // Initialize Passport with Google OAuth strategy
 passport.use(
@@ -16,6 +15,8 @@ passport.use(
         const userData = {
           email: profile.emails[0].value,
           name: profile.displayName,
+          accessToken:accessToken,
+          refreshToken:refreshToken,
         };
         logger.info("✅ Google profile received: " + JSON.stringify(userData));
         done(null, userData);
