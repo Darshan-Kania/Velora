@@ -17,7 +17,7 @@ router.get(
   })
 );
 
-router.get('/google/callback', passport.authenticate('google', { failureRedirect: '/error401' }), (req, res) => {
+router.get('/google/callback', passport.authenticate('google', {session: false, failureRedirect: '/error401' }), (req, res) => {
   // Successful authentication, redirect or handle the user as desired
   logger.info(`User ${req.user.email} authenticated successfully`);
   res.redirect('/');
