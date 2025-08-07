@@ -46,6 +46,7 @@ router.get(
       );
 
       logger.info("🔐 JWT generated for user: " + req.user.email);
+      req.cookies.JWT_TOKEN = token; // Set JWT in cookies
       res.status(200).json({
         message: "Authentication successful",
         token,
