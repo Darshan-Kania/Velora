@@ -42,11 +42,10 @@ router.get(
           name: req.user.name,
         },
         process.env.JWT_SECRET,
-        { expiresIn: "1h" }
+        { expiresIn: "7d" }
       );
 
       logger.info("🔐 JWT generated for user: " + req.user.email);
-      req.cookies.JWT_TOKEN = token; // Set JWT in cookies
       res.status(200).json({
         message: "Authentication successful",
         token,
