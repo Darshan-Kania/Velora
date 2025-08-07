@@ -40,4 +40,4 @@ const logger = winston.createLogger({
 });
 
 //Export the logger instance
-module.exports = logger;
+module.exports = {logger};
