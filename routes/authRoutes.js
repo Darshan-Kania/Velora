@@ -3,6 +3,7 @@ const passport = require("passport");
 const jwt = require("jsonwebtoken");
 const { logger } = require("../utils/logger");
 require("dotenv").config();
+const userModel = require("../models/user"); // Assuming you have a user model defined
 
 const router = express.Router();
 // Initiated when /auth/google is hit and the user wants to authenticate via Google
@@ -48,6 +49,16 @@ router.get(
       );
 
       logger.info("🔐 JWT generated for user: " + req.user.email);
+      const newUser= new userModel({
+        userId: req.user.id,
+        email: req.user.email,
+        name: req.user.name,
+        accessToken: req.user.accessToken,
+        refreshToken: req.user.refreshToken,
+      });
+      newUser.save()
+        .then(() => logger.info("✅ User saved to database: " + req.user.email))
+        .catch(err => logger.error("❌ Error saving user to database: " + err.message));
       res.status(200).json({
         message: "Authentication successful",
         token,

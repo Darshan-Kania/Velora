@@ -1,0 +1,31 @@
+const mongoose=require("mongoose");
+const userSchema=new mongoose.Schema({
+  userId:{
+    type:String,
+    required:true,
+    unique:true,
+    nullable:false,
+  },
+  email:{
+    type:String,
+    required:true,
+    unique:true,
+    nullable:false,
+  },
+  name:{
+    type:String,
+    required:true,
+    nullable:false,
+  },
+  accessToken:{
+    type:String,
+    required:true,
+    nullable:false,
+  },
+  refreshToken:{
+    type:String,
+    required:true,
+    nullable:false,
+  },
+},{timestamps:true});
+module.exports=mongoose.model("User",userSchema);
