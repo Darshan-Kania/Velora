@@ -1,20 +1,32 @@
-const {app,logger,express}=require('./index');
-
+// Imports
+const express = require("express");
+const { logger } = require("./utils/logger");
+const passport = require("passport");
+require("dotenv").config();
+// Import passport configuration to register strategies
+require("./middleware/passport");
+const app = express();
+// Routes
+const authRoutes = require("./routes/authRoutes").router;
+// Middleware
+app.use(passport.initialize());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use((req,res,next) => {
-  logger.info(`${req.method} ${req.url}`);
-  res.on('finish', () => {
-    logger.info(`Response status: ${res.statusCode}`);
-  });
+app.use((req, res, next) => {
+  if (req.url != "/favicon.ico") {
+    logger.info(`${req.method} ${req.url}}`);
+    res.on("finish", () => {
+      logger.info(`Response status: ${res.statusCode}`);
+    });
+  }
   next();
 });
 
-app.get('/', (req, res) => {
-  res.send('Hello, World!').status(200);
+// Routes
+app.use("/auth", authRoutes);
+app.get("/", (req, res) => {
+  res.send("Hello World").status(200);
 });
-
-// Start server
-app.listen(8000, () => {
-  logger.info('Server started on port 8000');
+app.listen(process.env.PORT, () => {
+  logger.info(`Server is running on port ${process.env.PORT}`);
 });
