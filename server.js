@@ -1,4 +1,5 @@
 const express = require("express");
+const connectDb=require("./utils/dbConn")
 const { logger } = require("./utils/logger");
 require("dotenv").config();
 const passport = require("passport");
@@ -6,7 +7,7 @@ require("./middleware/passport");
 const { router: authRoutes } = require("./routes/authRoutes");
 
 const app = express();
-
+connectDb();
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
