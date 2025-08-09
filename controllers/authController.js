@@ -9,7 +9,7 @@ function generateJwtToken(user) {
   return jwt.sign(
     { email: user.email, name: user.name },
     process.env.JWT_SECRET,
-    { expiresIn: "7d" }
+    { expiresIn: process.env.JWT_EXPIRES_IN || "7d" }
   );
 }
 
