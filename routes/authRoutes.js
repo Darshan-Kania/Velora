@@ -1,12 +1,11 @@
 const express = require("express");
 const passport = require("passport");
-const jwt = require("jsonwebtoken");
 const { logger } = require("../utils/logger");
-require("dotenv").config();
-const userModel = require("../models/user"); // Assuming you have a user model defined
+const { authenticateUser } = require("../controllers/authController");
 
 const router = express.Router();
-// Initiated when /auth/google is hit and the user wants to authenticate via Google
+
+// Step 1: Initiate Google OAuth
 router.get(
   "/google",
   (req, res, next) => {
@@ -25,9 +24,8 @@ router.get(
     prompt: "consent",
   })
 );
-// Callback route for Google to redirect to after authentication
-// This is where the user will be redirected after successful authentication
-// It will handle the JWT generation and send it back to the client
+
+// Step 2: Google OAuth callback
 router.get(
   "/google/callback",
   (req, res, next) => {
@@ -38,47 +36,32 @@ router.get(
     session: false,
     failureRedirect: "/auth/error401",
   }),
-  (req, res) => {
+  async (req, res) => {
     try {
-      logger.info("✅ Google OAuth success for user: " + req.user.email);
+      const { jwtToken, user } = await authenticateUser(req);
 
-      const token = jwt.sign(
-        {
-          email: req.user.email,
-          name: req.user.name,
-        },
-        process.env.JWT_SECRET,
-        { expiresIn: "7d" }
-      );
-      logger.info(
-        "🔄 New user detected, saving to database: " + req.user.email
-      );
-      logger.info("🔐 JWT generated for user: " + req.user.email);
-      const newUser = new userModel({
-        email: req.user.email,
-        name: req.user.name,
-        accessToken: req.user.accessToken,
-        refreshToken: req.user.refreshToken,
-        jwtToken: token,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
-      });
-      newUser
-        .save()
-        .then(() => logger.info("✅ User saved to database: " + req.user.email))
-        .catch((err) =>
-          logger.error("❌ Error saving user to database: " + err.message)
-        );
       res.status(200).json({
         message: "Authentication successful",
-        token,
+        jwtToken,
+        user: {
+          email: user.email,
+          name: user.name,
+        },
       });
     } catch (error) {
-      logger.error("❌ Error while generating JWT: " + error.message);
-      res.status(500).send("Error generating token");
+      logger.error("❌ Authentication failed", {
+        error: error.message,
+        stack: error.stack,
+      });
+      res.status(500).json({
+        message: "Authentication failed",
+        error: error.message,
+      });
     }
   }
 );
-// Error handling route for unauthorized access
+
+// Step 3: Unauthorized route
 router.get("/error401", (req, res) => {
   logger.warn("❌ Google OAuth failed - Redirected to /error401");
   res.status(401).send("Unauthorized");
