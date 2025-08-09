@@ -55,7 +55,6 @@ router.get(
       });
       res.status(500).json({
         message: "Authentication failed",
-        error: error.message,
       });
     }
   }
