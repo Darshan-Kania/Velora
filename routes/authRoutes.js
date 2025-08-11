@@ -1,7 +1,10 @@
-const express = require("express");
-const passport = require("passport");
-const { logger } = require("../utils/logger");
-const { authenticateUser } = require("../controllers/authController");
+import express from "express";
+import passport from "passport";
+import { logger } from "../utils/logger.js";
+import {
+  authenticateUser,
+  isAuthenticated,
+} from "../controllers/authController.js";
 
 const router = express.Router();
 
@@ -9,8 +12,13 @@ const router = express.Router();
 router.get(
   "/google",
   (req, res, next) => {
-    logger.info("🔁 Initiating Google OAuth");
-    next();
+    if (isAuthenticated(req)) {
+      logger.info("✅ User already authenticated, redirecting to home");
+      res.redirect("/");
+    } else {
+      logger.info("🔁 Initiating Google OAuth");
+      next();
+    }
   },
   passport.authenticate("google", {
     scope: [
@@ -39,7 +47,13 @@ router.get(
   async (req, res) => {
     try {
       const { jwtToken, user } = await authenticateUser(req);
-
+      res.cookie("jwt", jwtToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        path: "/",
+      });
       res.status(200).json({
         message: "Authentication successful",
         jwtToken,
@@ -66,4 +80,4 @@ router.get("/error401", (req, res) => {
   res.status(401).send("Unauthorized");
 });
 
-module.exports = { router };
+export { router as authRoutes };
