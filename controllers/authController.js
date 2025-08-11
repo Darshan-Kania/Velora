@@ -88,7 +88,7 @@ async function authenticateUser(req) {
 
 /** isAuthenticated is code to check if user is authenticated with JWT Token not expired */
 function isAuthenticated(req) {
-  const token = req.cookies.jwt;
+  const token = req.cookies && req.cookies.jwt;
   if (!token) {
     logger.warn("❌ No JWT token provided");
     return false;
