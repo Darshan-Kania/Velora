@@ -1,5 +1,6 @@
-const mongoose=require("mongoose");
-const { v4: uuidv4 } = require("uuid");
+import mongoose from "mongoose";
+import { v4 as uuidv4 } from "uuid";
+// models/user.js
 const userSchema=new mongoose.Schema({
   userId:{
     type:String,
@@ -33,4 +34,4 @@ const userSchema=new mongoose.Schema({
     required:true,
   },
 },{timestamps:true});
-module.exports=mongoose.model("User",userSchema);
+export const userModel = mongoose.model("User", userSchema);

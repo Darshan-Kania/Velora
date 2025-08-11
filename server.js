@@ -1,16 +1,18 @@
-const express = require("express");
-const connectDb=require("./utils/dbConn")
-const { logger } = require("./utils/logger");
-require("dotenv").config();
-const passport = require("passport");
-require("./middleware/passport");
-const { router: authRoutes } = require("./routes/authRoutes");
+import express from "express";
+import connectDb from "./utils/dbConn.js";
+import "dotenv/config";
+import passport from "passport";
+import cookieParser from "cookie-parser";
+import "./middleware/passport.js";
+import { logger } from "./utils/logger.js";
+import { authRoutes } from "./routes/authRoutes.js";
 
 const app = express();
 connectDb();
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 // Initialize Passport
 app.use(passport.initialize());
 
@@ -39,6 +41,6 @@ app.use((err, req, res, next) => {
   res.status(500).send("Internal Server Error");
 });
 
-app.listen(process.env.PORT , () => {
+app.listen(process.env.PORT, () => {
   logger.info(`🚀 Server is running on port ${process.env.PORT}`);
 });

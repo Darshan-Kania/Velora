@@ -1,7 +1,6 @@
-const { logger } = require("../utils/logger");
-const userModel = require("../models/user");
-const jwt = require("jsonwebtoken");
-
+import jwt from "jsonwebtoken";
+import { logger } from "../utils/logger.js";
+import { userModel } from "../models/user.js";
 /**
  * Generate JWT token for a user
  */
@@ -87,6 +86,21 @@ async function authenticateUser(req) {
   return { jwtToken, user };
 }
 
-module.exports = {
-  authenticateUser,
-};
+/** isAuthenticated is code to check if user is authenticated with JWT Token not expired */
+function isAuthenticated(req) {
+  const token = req.cookies.jwt;
+  if (!token) {
+    logger.warn("❌ No JWT token provided");
+    return false;
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    logger.info(`✅ Token valid for user: ${decoded.email}`);
+    return true;
+  } catch (err) {
+    logger.error(`❌ Token verification failed: ${err.message}`);
+    return false;
+  }
+}
+export { authenticateUser, isAuthenticated };
