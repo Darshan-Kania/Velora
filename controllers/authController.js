@@ -103,4 +103,40 @@ function isAuthenticated(req) {
     return false;
   }
 }
-export { authenticateUser, isAuthenticated };
+
+/** Logout user and clear JWT cookie */
+async function logoutUser(req, res) {
+  const curToken = req.cookies.jwt;
+  logger.info(`🔍 Current JWT token: ${curToken ? 'Present' : 'Not found'}`);
+  
+  if (curToken) {
+    try {
+      // Verify token is valid before proceeding
+      jwt.verify(curToken, process.env.JWT_SECRET);
+      
+      // Find and update user in database
+      const user = await userModel.findOne({ jwtToken: curToken });
+      if (user) {
+        user.jwtToken = undefined;
+        user.accessToken = undefined;
+        user.refreshToken = undefined;
+        user.expiresAt = undefined;
+        await user.save();
+        logger.info(`✅ User ${user.email} logged out successfully - tokens cleared from DB`);
+      } else {
+        logger.warn("⚠️ User not found in DB for the provided JWT token");
+      }
+    } catch (err) {
+      logger.error("❌ JWT verification failed during logout", {
+        error: err.message,
+        stack: err.stack,
+      });
+    }
+  } else {
+    logger.info("ℹ️ No JWT token found - user already logged out");
+  }
+  
+  logger.info("🔓 User logout process completed");
+}
+
+export { authenticateUser, isAuthenticated, logoutUser };
