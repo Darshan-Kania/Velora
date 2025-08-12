@@ -79,5 +79,10 @@ router.get("/error401", (req, res) => {
   logger.warn("❌ Google OAuth failed - Redirected to /error401");
   res.status(401).send("Unauthorized");
 });
-
+// Step 4: Logout route
+router.get("/logout", (req, res) => {
+  logger.info("🔓 User logged out, clearing JWT cookie");
+  res.clearCookie("jwt");
+  res.redirect("/");
+});
 export { router as authRoutes };
