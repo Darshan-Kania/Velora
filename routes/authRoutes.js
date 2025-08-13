@@ -48,13 +48,13 @@ router.get(
   async (req, res) => {
     try {
       const { jwtToken, user } = await authenticateUser(req);
-      
+
       // Log JWT token creation and cookie setting
       logger.info(`🔑 JWT token created for ${user.email}`, {
         tokenLength: jwtToken.length,
-        expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+        expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
       });
-      
+
       res.cookie("jwt", jwtToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
@@ -62,9 +62,11 @@ router.get(
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         path: "/",
       });
-      
-      logger.info(`🍪 JWT cookie set for ${user.email} (httpOnly: true, 7 days expiry)`);
-      
+
+      logger.info(
+        `🍪 JWT cookie set for ${user.email} (httpOnly: true, 7 days expiry)`
+      );
+
       res.status(200).json({
         message: "Authentication successful",
         jwtToken,
@@ -95,7 +97,11 @@ router.get("/logout", async (req, res) => {
   try {
     logger.info("🔓 User logout initiated");
     await logoutUser(req, res);
-    res.clearCookie("jwt");
+    res.clearCookie("jwt", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+    });
     logger.info("🔓 JWT cookie cleared, redirecting to home");
     res.redirect("/");
   } catch (error) {

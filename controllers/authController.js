@@ -1,48 +1,12 @@
 import jwt from "jsonwebtoken";
 import { logger } from "../utils/logger.js";
 import { userModel } from "../models/user.js";
-/**
- * Generate JWT token for a user
- */
-function generateJwtToken(user) {
-  return jwt.sign(
-    { email: user.email, name: user.name },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || "7d" }
-  );
-}
-
-/**
- * Save a new user to DB
- */
-async function saveNewUser(userData, jwtToken) {
-  const newUser = new userModel({
-    email: userData.email,
-    name: userData.name,
-    accessToken: userData.accessToken,
-    refreshToken: userData.refreshToken,
-    jwtToken: jwtToken,
-    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  });
-
-  await newUser.save();
-  logger.info(`✅ New user ${userData.email} saved successfully`);
-  return newUser;
-}
-
-/**
- * Update an existing user in DB
- */
-async function updateExistingUser(existingUser, userData, jwtToken) {
-  existingUser.accessToken = userData.accessToken;
-  existingUser.refreshToken = userData.refreshToken;
-  existingUser.jwtToken = jwtToken;
-  existingUser.expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-
-  await existingUser.save();
-  logger.info(`✅ User ${userData.email} updated successfully`);
-  return existingUser;
-}
+import {
+  verifyAndClearTokens,
+  generateJwtToken,
+  verifyJwtToken,
+  retrieveOrRegisterUser,
+} from "../services/authService.js";
 
 /**
  * Authenticate user and return jwt token + user
@@ -74,20 +38,26 @@ async function authenticateUser(req) {
   }
 
   // Check DB for user
-  let user = await userModel.findOne({ email: userData.email });
-
-  if (user) {
-    logger.info(`ℹ️ Existing user found: ${userData.email}`);
-    user = await updateExistingUser(user, userData, jwtToken);
-  } else {
-    user = await saveNewUser(userData, jwtToken);
+  // Retrieve existing user or register a new one, passing userData and jwtToken
+  let user;
+  try {
+    user = await retrieveOrRegisterUser(userData, jwtToken);
+    logger.info(`👤 User retrieved or registered: ${user.email}`, {
+      userId: user._id,
+    });
+  } catch (err) {
+    logger.error(`❌ Failed to retrieve or register user: ${userData.email}`, {
+      error: err.message,
+      stack: err.stack,
+    });
+    throw new Error("User retrieval or registration failed");
   }
 
   return { jwtToken, user };
 }
 
 /** isAuthenticated is code to check if user is authenticated with JWT Token not expired */
-function isAuthenticated(req) {
+async function isAuthenticated(req) {
   const token = req.cookies && req.cookies.jwt;
   if (!token) {
     logger.warn("❌ No JWT token provided");
@@ -95,48 +65,29 @@ function isAuthenticated(req) {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    logger.info(`✅ Token valid for user: ${decoded.email}`);
+    const decoded = await verifyJwtToken({ token });
+    if (!decoded) {
+      logger.warn("❌ Invalid JWT token");
+      return false;
+    }
     return true;
   } catch (err) {
-    logger.error(`❌ Token verification failed: ${err.message}`);
+    logger.warn("❌ JWT verification failed", { error: err.message });
     return false;
   }
 }
 
 /** Logout user and clear JWT cookie */
 async function logoutUser(req, res) {
-  const curToken = req.cookies.jwt;
-  logger.info(`🔍 Current JWT token: ${curToken ? 'Present' : 'Not found'}`);
-  
+  const curToken = req.cookies && req.cookies.jwt;
+  logger.info(`🔍 Current JWT token: ${curToken ? "Present" : "Not found"}`);
   if (curToken) {
-    try {
-      // Verify token is valid before proceeding
-      jwt.verify(curToken, process.env.JWT_SECRET);
-      
-      // Find and update user in database
-      const user = await userModel.findOne({ jwtToken: curToken });
-      if (user) {
-        user.jwtToken = undefined;
-        user.accessToken = undefined;
-        user.refreshToken = undefined;
-        user.expiresAt = undefined;
-        await user.save();
-        logger.info(`✅ User ${user.email} logged out successfully - tokens cleared from DB`);
-      } else {
-        logger.warn("⚠️ User not found in DB for the provided JWT token");
-      }
-    } catch (err) {
-      logger.error("❌ JWT verification failed during logout", {
-        error: err.message,
-        stack: err.stack,
-      });
-    }
+    await verifyAndClearTokens();
+    logger.info("🔓 JWT token cleared and user logged out");
   } else {
     logger.info("ℹ️ No JWT token found - user already logged out");
   }
-  
-  logger.info("🔓 User logout process completed");
+  res.status(200).json({ message: "Logged out successfully" });
 }
 
 export { authenticateUser, isAuthenticated, logoutUser };
