@@ -13,16 +13,10 @@ const router = express.Router();
 router.get(
   "/google",
   async (req, res, next) => {
-    try {
-      if (await isAuthenticated(req)) {
-        logger.info("✅ User already authenticated, redirecting to home");
-        res.redirect("/");
-      } else {
-        next();
-      }
-    } catch (err) {
-      next(err);
-    }
+    if (await isAuthenticated(req)) {
+      logger.info("✅ User already authenticated, redirecting to home");
+      res.redirect("/");
+    } else {
       logger.info("🔁 Initiating Google OAuth");
       next();
     }
@@ -105,7 +99,7 @@ router.get("/logout", async (req, res) => {
     await logoutUser(req, res);
     res.clearCookie("jwt");
     logger.info("🔓 JWT cookie cleared, redirecting to home");
-    return res.redirect("/"); 
+    return res.redirect("/");
   } catch (error) {
     logger.error("❌ Logout failed", {
       error: error.message,
