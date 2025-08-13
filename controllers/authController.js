@@ -5,6 +5,7 @@ import {
   verifyJwtToken,
   retrieveOrRegisterUser,
 } from "../services/authService.js";
+import { startGmailWatchService } from "../services/gmailService.js";
 
 /**
  * Authenticate user and return jwt token + user

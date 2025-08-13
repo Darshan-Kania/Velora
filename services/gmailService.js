@@ -62,5 +62,57 @@ async function startGmailWatchService(userData) {
     });
   }
 }
-async function extractDataFromPubSub(req) {}
+async function extractDataFromPubSub(req) {
+  try {
+    logger.info("🔍 Extracting data from Pub/Sub notification");
+
+    // Google Cloud Pub/Sub sends data in this format:
+    // { message: { data: "base64-encoded-string", messageId: "...", publishTime: "..." } }
+    const pubsubMessage = req.body?.message;
+
+    if (!pubsubMessage) {
+      logger.warn("⚠️ No Pub/Sub message found in request body");
+      return null;
+    }
+
+    if (!pubsubMessage.data) {
+      logger.warn("⚠️ No data found in Pub/Sub message");
+      return null;
+    }
+
+    // Decode the base64 data
+    const decodedData = Buffer.from(pubsubMessage.data, "base64").toString(
+      "utf8"
+    );
+    logger.info(`📨 Decoded Pub/Sub data: ${decodedData}`);
+
+    // Parse the JSON data
+    const gmailNotification = JSON.parse(decodedData);
+    logger.info(
+      `📬 Gmail notification details: ${JSON.stringify(
+        gmailNotification,
+        null,
+        2
+      )}`
+    );
+
+    // Extract important information
+    const { emailAddress, historyId } = gmailNotification;
+    logger.info(`👤 Email: ${emailAddress}, 📋 New HistoryId: ${historyId}`);
+
+    return {
+      email: emailAddress,
+      historyId,
+      messageId: pubsubMessage.messageId,
+      publishTime: pubsubMessage.publishTime,
+      rawNotification: gmailNotification,
+    };
+  } catch (err) {
+    logger.error("❌ Failed to extract Pub/Sub data", {
+      error: err.message,
+      stack: err.stack,
+    });
+    return null;
+  }
+}
 export { startGmailWatchService, extractDataFromPubSub };
