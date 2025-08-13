@@ -12,8 +12,8 @@ const router = express.Router();
 // Step 1: Initiate Google OAuth
 router.get(
   "/google",
-  (req, res, next) => {
-    if (isAuthenticated(req)) {
+  async (req, res, next) => {
+    if (await isAuthenticated(req)) {
       logger.info("✅ User already authenticated, redirecting to home");
       res.redirect("/");
     } else {
@@ -99,7 +99,7 @@ router.get("/logout", async (req, res) => {
     await logoutUser(req, res);
     res.clearCookie("jwt");
     logger.info("🔓 JWT cookie cleared, redirecting to home");
-    return res.redirect("/"); // <-- Add return here
+    return res.redirect("/"); 
   } catch (error) {
     logger.error("❌ Logout failed", {
       error: error.message,
