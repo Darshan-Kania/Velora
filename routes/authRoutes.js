@@ -13,10 +13,16 @@ const router = express.Router();
 router.get(
   "/google",
   async (req, res, next) => {
-    if (await isAuthenticated(req)) {
-      logger.info("✅ User already authenticated, redirecting to home");
-      res.redirect("/");
-    } else {
+    try {
+      if (await isAuthenticated(req)) {
+        logger.info("✅ User already authenticated, redirecting to home");
+        res.redirect("/");
+      } else {
+        next();
+      }
+    } catch (err) {
+      next(err);
+    }
       logger.info("🔁 Initiating Google OAuth");
       next();
     }
