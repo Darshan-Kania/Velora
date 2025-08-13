@@ -97,19 +97,15 @@ router.get("/logout", async (req, res) => {
   try {
     logger.info("🔓 User logout initiated");
     await logoutUser(req, res);
-    res.clearCookie("jwt", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-    });
+    res.clearCookie("jwt");
     logger.info("🔓 JWT cookie cleared, redirecting to home");
-    res.redirect("/");
+    return res.redirect("/"); // <-- Add return here
   } catch (error) {
     logger.error("❌ Logout failed", {
       error: error.message,
       stack: error.stack,
     });
-    res.status(500).json({
+    return res.status(500).json({
       message: "Logout failed",
     });
   }

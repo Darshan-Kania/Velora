@@ -1,4 +1,7 @@
-async function verifyAndClearTokens() {
+import jwt from "jsonwebtoken";
+import { logger } from "../utils/logger.js";
+import { userModel } from "../models/user.js";
+async function verifyAndClearTokens(curToken) {
   try {
     jwt.verify(curToken, process.env.JWT_SECRET);
 
@@ -35,7 +38,7 @@ function generateJwtToken(user) {
   );
 }
 
-async function verifyJwtToken(params) {
+async function verifyJwtToken(token) {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     logger.info(`✅ Token valid for user: ${decoded.email}`);

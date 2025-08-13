@@ -1,6 +1,4 @@
-import jwt from "jsonwebtoken";
 import { logger } from "../utils/logger.js";
-import { userModel } from "../models/user.js";
 import {
   verifyAndClearTokens,
   generateJwtToken,
@@ -82,12 +80,12 @@ async function logoutUser(req, res) {
   const curToken = req.cookies && req.cookies.jwt;
   logger.info(`🔍 Current JWT token: ${curToken ? "Present" : "Not found"}`);
   if (curToken) {
-    await verifyAndClearTokens();
+    await verifyAndClearTokens(curToken);
     logger.info("🔓 JWT token cleared and user logged out");
   } else {
     logger.info("ℹ️ No JWT token found - user already logged out");
   }
-  res.status(200).json({ message: "Logged out successfully" });
+  // Do not send any response here. Let the route handler handle it.
 }
 
 export { authenticateUser, isAuthenticated, logoutUser };
