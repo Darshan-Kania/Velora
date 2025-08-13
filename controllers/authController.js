@@ -62,7 +62,7 @@ async function isAuthenticated(req) {
     return false;
   }
   try {
-    const decoded = await verifyJwtToken({ token });
+    const decoded = await verifyJwtToken( token );
     if (!decoded) {
       logger.warn("❌ Invalid JWT token");
       return false;
