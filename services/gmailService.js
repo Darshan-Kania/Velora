@@ -5,8 +5,7 @@ async function startWatch(gmail) {
     userId: "me",
     requestBody: {
       labelIds: ["INBOX"],
-      topicName: process.env.GOOGLE_PUBSUB_TOPIC,
-      historyTypes: ["messageAdded"],
+      topicName: process.env.GOOGLE_PUBSUB_TOPIC
     },
   });
 }
