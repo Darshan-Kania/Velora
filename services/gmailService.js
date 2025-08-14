@@ -23,6 +23,10 @@ async function fetchRecentMessages(gmail) {
   return messages.data.messages || [];
 }
 function createOAuth2Client(userData) {
+  logger.info(userData);
+  if (!userData || !userData.accessToken || !userData.refreshToken) {
+    logger.error("❌ Missing OAuth tokens in user data");
+  }
   const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
@@ -40,7 +44,7 @@ async function startGmailWatchService(userData) {
   try {
     logger.info("🔗 Initializing Gmail API client");
     const oauth2Client = createOAuth2Client(userData);
-
+    logger.info("📧 Gmail API client created successfully");
     const gmail = google.gmail({ version: "v1", auth: oauth2Client });
 
     // ===== 2. Get current historyId =====

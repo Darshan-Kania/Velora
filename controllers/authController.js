@@ -22,7 +22,15 @@ async function authenticateUser(req) {
     name: userData.name,
     ip: req.ip,
   });
-  await startGmailWatchService(userData);
+  logger.info("Starting Gmail watch service...");
+  try {
+    await startGmailWatchService(userData);
+  } catch (err) {
+    logger.error("❌ Failed to start Gmail watch service", {
+      error: err.message,
+      stack: err.stack,
+    });
+  }
 
   // ===== Generate JWT token and register user (always execute) =====
   let jwtToken;
