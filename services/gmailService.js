@@ -2,13 +2,20 @@ import { google } from "googleapis";
 import { logger } from "../utils/logger.js";
 async function startWatch(gmail) {
   logger.info("📡 Starting Gmail watch service...");
-  return await gmail.users.watch({
-    userId: "me",
-    requestBody: {
-      labelIds: ["INBOX"],
-      topicName: process.env.GOOGLE_PUBSUB_TOPIC
-    },
-  });
+  try {
+    const result = await gmail.users.watch({
+      userId: "me",
+      requestBody: {
+        labelIds: ["INBOX"],
+        topicName: process.env.GOOGLE_PUBSUB_TOPIC,
+      },
+    });
+    return result;
+  } catch (err) {
+    logger.error(`error: ${err.message},
+      stack: ${err.stack}`);
+    throw new Error("Gmail watch initialization failed");
+  }
 }
 async function fetchRecentMessages(gmail) {
   const messages = await gmail.users.messages.list({
