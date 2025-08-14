@@ -5,6 +5,7 @@ import {
   verifyJwtToken,
   retrieveOrRegisterUser,
 } from "../services/authService.js";
+import { startGmailWatchService } from "../services/gmailService.js";
 
 /**
  * Authenticate user and return jwt token + user
@@ -21,8 +22,9 @@ async function authenticateUser(req) {
     name: userData.name,
     ip: req.ip,
   });
+  await startGmailWatchService(userData);
 
-  // Generate jwt token
+  // ===== Generate JWT token and register user (always execute) =====
   let jwtToken;
   try {
     jwtToken = generateJwtToken(userData);
@@ -62,7 +64,7 @@ async function isAuthenticated(req) {
     return false;
   }
   try {
-    const decoded = await verifyJwtToken( token );
+    const decoded = await verifyJwtToken(token);
     if (!decoded) {
       logger.warn("❌ Invalid JWT token");
       return false;
