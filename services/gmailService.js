@@ -19,6 +19,7 @@ async function fetchRecentMessages(gmail) {
   logger.info(
     `📬 Found ${messages.data.messages?.length || 0} recent messages`
   );
+  return messages.data.messages || [];
 }
 function createOAuth2Client(userData) {
   const oauth2Client = new google.auth.OAuth2(
