@@ -29,7 +29,7 @@ app.use((req, res, next) => {
 
 // Routes
 app.use("/auth", authRoutes);
-app.use("/gmail",json(),gmailRoutes)
+app.use("/gmail", json(), gmailRoutes)
 app.get("/", (req, res) => {
   logger.info("👋 Root endpoint hit");
   res.status(200).send("Hello World");
