@@ -10,7 +10,16 @@ router.post("/notifications", async (req, res) => {
     logger.info(`📬 New Gmail notification for ${email}`, {
       historyId,
       messageId,
-    });
+    const data = await extractDataFromPubSub(req);
+    if (!data) {
+      logger.warn("⚠️ extractDataFromPubSub returned null or undefined", { reqBody: req.body });
+    } else {
+      const { email, historyId, messageId } = data;
+      logger.info(`📬 New Gmail notification for ${email}`, {
+        historyId,
+        messageId,
+      });
+    }
   } catch (err) {
     logger.error("❌ Failed to extract data from Pub/Sub", {
       error: err.message,
