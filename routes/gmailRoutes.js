@@ -6,13 +6,11 @@ const router = express.Router();
 // Note: We're using express.json() from server.js, no need for additional body parser
 router.post("/notifications", async (req, res) => {
   try {
-    const { email, historyId, messageId } = await extractDataFromPubSub(req);
-    logger.info(`📬 New Gmail notification for ${email}`, {
-      historyId,
-      messageId,
     const data = await extractDataFromPubSub(req);
     if (!data) {
-      logger.warn("⚠️ extractDataFromPubSub returned null or undefined", { reqBody: req.body });
+      logger.warn("⚠️ extractDataFromPubSub returned null or undefined", {
+        reqBody: req.body,
+      });
     } else {
       const { email, historyId, messageId } = data;
       logger.info(`📬 New Gmail notification for ${email}`, {
