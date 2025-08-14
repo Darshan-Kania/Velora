@@ -1,6 +1,7 @@
 import { google } from "googleapis";
 import { logger } from "../utils/logger.js";
 async function startWatch(gmail) {
+  logger.info("📡 Starting Gmail watch service...");
   return await gmail.users.watch({
     userId: "me",
     requestBody: {
