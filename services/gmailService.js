@@ -14,6 +14,7 @@ async function fetchRecentMessages(gmail) {
     userId: "me",
     q: "newer_than:7d", // Gmail search syntax
     maxResults: 10,
+    historyTypes: ["messageAdded"],
   });
   logger.info(
     `📬 Found ${messages.data.messages?.length || 0} recent messages`
