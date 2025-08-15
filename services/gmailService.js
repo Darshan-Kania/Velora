@@ -2,6 +2,7 @@ import { google } from "googleapis";
 import { logger } from "../utils/logger.js";
 import { UserConfigModel } from "../models/UserConfig.js";
 import { UserModel } from "../models/User.js";
+import {decodeBase64Url} from "../utils/base64Helper.js";
 async function startWatch(gmail) {
   return await gmail.users.watch({
     userId: "me",
@@ -158,4 +159,131 @@ async function extractDataFromPubSub(req) {
     return null;
   }
 }
-export { startGmailWatchService, extractDataFromPubSub };
+async function updateUserHistory(email, historyId) {
+  try {
+    logger.info(`📜 Updating user history for ${email}`);
+    const userModel = await UserModel.findOne({ email });
+    if (!userModel) {
+      logger.warn(`⚠️ No user found with email: ${email}`);
+      throw new Error("User not found");
+    }
+    const userConfigObj = await UserConfigModel.findOne({
+      user: userModel._id,
+    });
+    if (!userConfigObj) {
+      logger.warn(`⚠️ No user config found for email: ${email}`);
+      throw new Error("User config not found");
+    }
+    const previousHistoryId = userConfigObj.lastHistoryId;
+    userConfigObj.lastHistoryId = historyId;
+    await userConfigObj.save();
+    logger.info(`✅ User history updated for ${email}`);
+    return previousHistoryId;
+  } catch (err) {
+    logger.error(`❌ Failed to update user history for ${email}`, {
+      error: err.message,
+      stack: err.stack,
+    });
+    throw new Error("User history update failed");
+  }
+}
+async function getEmailsBetweenHistoryIds(email, startHistoryId, endHistoryId) {
+  try {
+    logger.info(
+      `📥 Fetching emails between history IDs for ${email} ${startHistoryId}, ${endHistoryId}`,
+      {
+        email,
+        startHistoryId,
+        endHistoryId,
+      }
+    );
+    const user = await UserModel.findOne({ email });
+    if (!user || !user.accessToken) {
+      throw new Error("User not found or missing access token");
+    }
+    const auth = new google.auth.OAuth2();
+    auth.setCredentials({ access_token: user.accessToken });
+    const gmail = google.gmail({ version: "v1", auth });
+    const historyRes = await gmail.users.history.list({
+      userId: "me",
+      startHistoryId,
+      // historyTypes: ["messageAdded"],
+      maxResults: 50,
+    });
+    if (!historyRes.data.history) {
+      logger.info("No new history found between IDs", {
+        startHistoryId,
+        endHistoryId,
+      });
+      return [];
+    }
+    logger.info(`What is this ${JSON.stringify(historyRes.data)}`);
+
+    const messages = [];
+
+    for (const record of historyRes.data.history) {
+      if (record.messagesAdded) {
+        for (const added of record.messagesAdded) {
+          const msgId = added.message.id;
+          logger.debug(`📧 Fetching full message ${msgId}`);
+
+          const msgRes = await gmail.users.messages.get({
+            userId: "me",
+            id: msgId,
+            format: "full",
+          });
+
+          const payload = msgRes.data.payload || {};
+          const headers = payload.headers || [];
+          const getHeader = (name) =>
+            headers.find((h) => h.name.toLowerCase() === name.toLowerCase())
+              ?.value || "";
+
+          let bodyPlain = "";
+          let bodyHtml = "";
+
+          if (payload.parts) {
+            for (const part of payload.parts) {
+              if (part.mimeType === "text/plain" && part.body?.data) {
+                bodyPlain += decodeBase64Url(part.body.data);
+              }
+              if (part.mimeType === "text/html" && part.body?.data) {
+                bodyHtml += decodeBase64Url(part.body.data);
+              }
+            }
+          } else if (payload.body?.data) {
+            bodyPlain = decodeBase64Url(payload.body.data);
+          }
+
+          const emailDoc = {
+            user: user._id,
+            gmailMessageId: msgId,
+            threadId: msgRes.data.threadId,
+            historyId: msgRes.data.historyId,
+            labelIds: msgRes.data.labelIds,
+            from: getHeader("From"),
+            to: getHeader("To"),
+            subject: getHeader("Subject"),
+            snippet: msgRes.data.snippet,
+            bodyPlain,
+            bodyHtml,
+            receivedAt: new Date(getHeader("Date")),
+          };
+
+          messages.push(emailDoc);
+        }
+      }
+    }
+    logger.info(`✅ Retrieved ${messages.length} new emails for ${email}`);
+    return messages;
+  } catch (err) {
+    logger.error(`❌ Failed to fetch emails between history IDs for ${email} ${err.message} ${err.stack}`);
+    throw new Error("Failed to fetch emails");
+  }
+}
+export {
+  startGmailWatchService,
+  extractDataFromPubSub,
+  updateUserHistory,
+  getEmailsBetweenHistoryIds,
+};
