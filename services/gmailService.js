@@ -1,5 +1,7 @@
 import { google } from "googleapis";
 import { logger } from "../utils/logger.js";
+import { UserConfigModel } from "../models/UserConfig.js";
+import { UserModel } from "../models/User.js";
 async function startWatch(gmail) {
   return await gmail.users.watch({
     userId: "me",
@@ -35,6 +37,33 @@ function createOAuth2Client(userData) {
   });
   return oauth2Client;
 }
+/** Save User Configuration */
+async function saveUserConfig(email, userConfigObj) {
+  logger.info("Before Try");
+  try {
+    logger.info(`💾 Saving user config for ${email}`);
+    // Find user by email
+    const user = await UserModel.findOne({ email });
+    if (!user) {
+      logger.warn(`⚠️ No user found with email: ${email}`);
+      throw new Error("User not found");
+    }
+    // Save or update user config for the user
+    const userConfig = await UserConfigModel.findOneAndUpdate(
+      { user: user._id },
+      { $set: userConfigObj },
+      { new: true, upsert: true }
+    );
+    return userConfig;
+  } catch (err) {
+    logger.error(`❌ Failed to save user config for ${email}`, {
+      error: err.message,
+      stack: err.stack,
+    });
+    throw new Error("User config save failed");
+  }
+}
+
 /** Start Gmail Service After OAuth Success Detected */
 async function startGmailWatchService(userData) {
   try {
@@ -57,6 +86,17 @@ async function startGmailWatchService(userData) {
         `⏳ Watch expires at: ${new Date(Number(watchRes.data.expiration))}`
       );
     }
+    const userConfigObj = {
+      watchExpiration: watchRes.data.expiration
+        ? new Date(Number(watchRes.data.expiration))
+        : null,
+      lastHistoryId: null, //Will be updated later
+      isWatchActive: true,
+    };
+    const response = await saveUserConfig(userData.email, userConfigObj);
+    logger.info(`👤 User config saved for ${userData.email}`, {
+      userConfig: response,
+    });
     logger.info(`📡 Gmail watch started`, watchRes.data);
   } catch (err) {
     logger.error("❌ Failed to initialize Gmail client", {

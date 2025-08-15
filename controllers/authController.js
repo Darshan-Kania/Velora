@@ -65,11 +65,20 @@ async function isAuthenticated(req) {
   }
   try {
     const decoded = await verifyJwtToken(token);
+
     if (!decoded) {
       logger.warn("❌ Invalid JWT token");
       return false;
     }
-    return true;
+    logger.info(`✅ JWT token verified for user: ${decoded.email}`);
+    const user = await UserModel.findById(decoded.userId);
+    if (!user) {
+      logger.warn(`⚠️ User not found for ID: ${decoded.userId}`);
+      return false;
+    } else {
+      logger.info(`👤 User found: ${decoded.email}`);
+      return true;
+    }
   } catch (err) {
     logger.warn("❌ JWT verification failed", { error: err.message });
     return false;

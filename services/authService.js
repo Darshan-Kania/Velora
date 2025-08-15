@@ -1,17 +1,18 @@
 import jwt from "jsonwebtoken";
 import { logger } from "../utils/logger.js";
-import { userModel } from "../models/user.js";
+import { UserModel } from "../models/User.js";
 async function verifyAndClearTokens(curToken) {
   try {
     jwt.verify(curToken, process.env.JWT_SECRET);
 
     // Find and update user in database
-    const user = await userModel.findOne({ jwtToken: curToken });
+    const user = await UserModel.findOne({ jwtToken: curToken });
     if (user) {
       user.jwtToken = undefined;
       user.accessToken = undefined;
       user.refreshToken = undefined;
       user.expiresAt = undefined;
+      user.isActive = false;
       await user.save();
       logger.info(
         `✅ User ${user.email} logged out successfully - tokens cleared from DB`
@@ -53,7 +54,7 @@ async function verifyJwtToken(token) {
  */
 
 async function saveNewUser(userData, jwtToken) {
-  const newUser = new userModel({
+  const newUser = new UserModel({
     email: userData.email,
     name: userData.name,
     accessToken: userData.accessToken,
@@ -80,7 +81,7 @@ async function updateExistingUser(existingUser, userData, jwtToken) {
   return existingUser;
 }
 async function retrieveOrRegisterUser(userData, jwtToken) {
-  let user = await userModel.findOne({ email: userData.email });
+  let user = await UserModel.findOne({ email: userData.email });
 
   if (user) {
     logger.info(`ℹ️ Existing user found: ${userData.email}`);
