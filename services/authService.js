@@ -1,7 +1,6 @@
 import jwt from "jsonwebtoken";
 import { logger } from "../utils/logger.js";
 import { UserModel } from "../models/User.js";
-import { encryptField } from "../utils/encryptHelper.js";
 async function verifyAndClearTokens(curToken) {
   try {
     jwt.verify(curToken, process.env.JWT_SECRET);
