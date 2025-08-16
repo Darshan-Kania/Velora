@@ -18,9 +18,6 @@ async function extractNotificationData(email, historyId, messageId) {
       lastHistoryId,
       historyId
     );
-    messages.forEach((element) => {
-      console.log(element);
-    });
   } catch (err) {
     logger.error("❌ Failed to extract notification data", {
       error: err.message,
