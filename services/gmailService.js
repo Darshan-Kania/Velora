@@ -2,7 +2,9 @@ import { google } from "googleapis";
 import { logger } from "../utils/logger.js";
 import { UserConfigModel } from "../models/UserConfig.js";
 import { UserModel } from "../models/User.js";
-import {decodeBase64Url} from "../utils/base64Helper.js";
+import { EmailModel } from "../models/Email.js";
+import { decodeBase64Url } from "../utils/base64Helper.js";
+import { encryptField } from "../utils/encryptHelper.js";
 async function startWatch(gmail) {
   return await gmail.users.watch({
     userId: "me",
@@ -201,13 +203,17 @@ async function getEmailsBetweenHistoryIds(email, startHistoryId, endHistoryId) {
     if (!user || !user.accessToken) {
       throw new Error("User not found or missing access token");
     }
+    if (!startHistoryId || !endHistoryId) {
+      logger.warn("⚠️ Missing start or end history ID");
+      return [];
+    }
     const auth = new google.auth.OAuth2();
     auth.setCredentials({ access_token: user.accessToken });
     const gmail = google.gmail({ version: "v1", auth });
     const historyRes = await gmail.users.history.list({
       userId: "me",
       startHistoryId,
-      // historyTypes: ["messageAdded"],
+      historyTypes: ["messageAdded"],
       maxResults: 50,
     });
     if (!historyRes.data.history) {
@@ -217,16 +223,34 @@ async function getEmailsBetweenHistoryIds(email, startHistoryId, endHistoryId) {
       });
       return [];
     }
-    logger.info(`What is this ${JSON.stringify(historyRes.data)}`);
-
-    const messages = [];
-
+    try {
+      const messages = await extractMessageData(historyRes, gmail, user);
+      await storeMessageInDb(user._id, messages);
+      return messages;
+    } catch (error) {
+      logger.error("❌ Failed to extract or store messages", {
+        email,
+        startHistoryId,
+        endHistoryId,
+        error: error.message,
+        stack: error.stack,
+      });
+      throw new Error("Failed to extract or store messages");
+    }
+  } catch (err) {
+    logger.error(
+      `❌ Failed to fetch emails between history IDs for ${email} ${err.message} ${err.stack}`
+    );
+    throw new Error("Failed to fetch emails");
+  }
+}
+async function extractMessageData(historyRes, gmail, user) {
+  try {
+    const messages = []; // Initialize messages array
     for (const record of historyRes.data.history) {
       if (record.messagesAdded) {
         for (const added of record.messagesAdded) {
           const msgId = added.message.id;
-          logger.debug(`📧 Fetching full message ${msgId}`);
-
           const msgRes = await gmail.users.messages.get({
             userId: "me",
             id: msgId,
@@ -269,17 +293,54 @@ async function getEmailsBetweenHistoryIds(email, startHistoryId, endHistoryId) {
             bodyHtml,
             receivedAt: new Date(getHeader("Date")),
           };
-
-          messages.push(emailDoc);
+          const encryptedEmailDoc = encryptionBeforeStoring(emailDoc);
+          messages.push(encryptedEmailDoc);
         }
       }
     }
-    logger.info(`✅ Retrieved ${messages.length} new emails for ${email}`);
+    logger.info(`✅ Retrieved ${messages.length} new emails for ${user.email}`);
     return messages;
-  } catch (err) {
-    logger.error(`❌ Failed to fetch emails between history IDs for ${email} ${err.message} ${err.stack}`);
-    throw new Error("Failed to fetch emails");
+  } catch (error) {
+    logger.error(`❌ Failed to extract message data ${error.message}`, {
+      error: error.message,
+      stack: error.stack,
+    });
+    throw new Error("Failed to extract message data");
   }
+}
+async function storeMessageInDb(userId, messages) {
+  try {
+    await EmailModel.insertMany(
+      messages.map((msg) => ({ ...msg, user: userId }))
+    );
+    logger.info(`✅ Stored ${messages.length} emails for user ${userId}`);
+  } catch (error) {
+    logger.error("❌ Failed to store messages in DB", {
+      error: error.message,
+      stack: error.stack,
+    });
+    throw new Error("Failed to store messages in DB");
+  }
+}
+function encryptionBeforeStoring(emailDoc) {
+  const fieldsToEncrypt = [
+    "from",
+    "to",
+    "subject",
+    "bodyPlain",
+    "bodyHtml",
+    "snippet",
+  ];
+  const encryptedDoc = { ...emailDoc };
+
+  for (const field of fieldsToEncrypt) {
+    if (encryptedDoc[field]) {
+      const encrypted = encryptField(encryptedDoc[field]);
+      encryptedDoc[field] = encrypted;
+    }
+  }
+  logger.info("🔒 Encrypted email document");
+  return encryptedDoc;
 }
 export {
   startGmailWatchService,

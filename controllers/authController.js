@@ -6,6 +6,7 @@ import {
   retrieveOrRegisterUser,
 } from "../services/authService.js";
 import { startGmailWatchService } from "../services/gmailService.js";
+import { UserModel } from "../models/User.js";
 
 /**
  * Authenticate user and return jwt token + user
@@ -71,9 +72,9 @@ async function isAuthenticated(req) {
       return false;
     }
     logger.info(`✅ JWT token verified for user: ${decoded.email}`);
-    const user = await UserModel.findById(decoded.userId);
+    const user = await UserModel.findOne({ email: decoded.email });
     if (!user) {
-      logger.warn(`⚠️ User not found for ID: ${decoded.userId}`);
+      logger.warn(`⚠️ User not found for email: ${decoded.email}`);
       return false;
     } else {
       logger.info(`👤 User found: ${decoded.email}`);

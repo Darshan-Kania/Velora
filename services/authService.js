@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import { logger } from "../utils/logger.js";
 import { UserModel } from "../models/User.js";
+import { encryptField } from "../utils/encryptHelper.js";
 async function verifyAndClearTokens(curToken) {
   try {
     jwt.verify(curToken, process.env.JWT_SECRET);
@@ -43,10 +44,10 @@ async function verifyJwtToken(token) {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     logger.info(`✅ Token valid for user: ${decoded.email}`);
-    return true;
+    return decoded;
   } catch (err) {
     logger.error(`❌ Token verification failed: ${err.message}`);
-    return false;
+    return undefined;
   }
 }
 /**
@@ -75,7 +76,7 @@ async function updateExistingUser(existingUser, userData, jwtToken) {
   existingUser.refreshToken = userData.refreshToken;
   existingUser.jwtToken = jwtToken;
   existingUser.expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-
+  existingUser.isActive = true;
   await existingUser.save();
   logger.info(`✅ User ${userData.email} updated successfully`);
   return existingUser;
