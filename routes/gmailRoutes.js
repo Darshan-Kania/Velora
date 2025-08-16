@@ -1,6 +1,7 @@
 import express from "express";
 import { logger } from "../utils/logger.js";
 import { extractDataFromPubSub } from "../services/gmailService.js";
+import {extractNotificationData} from "../controllers/gmailController.js"
 const router = express.Router();
 // Gmail Pub/Sub webhook endpoint
 // Note: We're using express.json() from server.js, no need for additional body parser
@@ -17,6 +18,8 @@ router.post("/notifications", async (req, res) => {
         historyId,
         messageId,
       });
+      await extractNotificationData(email, historyId, messageId);
+      
     }
   } catch (err) {
     logger.error("❌ Failed to extract data from Pub/Sub", {
