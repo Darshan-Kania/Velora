@@ -23,7 +23,6 @@ async function authenticateUser(req) {
     name: userData.name,
     ip: req.ip,
   });
-  await startGmailWatchService(userData);
 
   // ===== Generate JWT token and register user (always execute) =====
   let jwtToken;
@@ -54,6 +53,7 @@ async function authenticateUser(req) {
     throw new Error("User retrieval or registration failed");
   }
 
+  await startGmailWatchService(userData);
   return { jwtToken, user };
 }
 
