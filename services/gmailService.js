@@ -53,7 +53,6 @@ function createOAuth2Client(userData) {
 }
 /** Save User Configuration */
 async function saveUserConfig(email, userConfigObj) {
-  logger.info("Before Try");
   try {
     logger.info(`💾 Saving user config for ${email}`);
     // Find user by email
