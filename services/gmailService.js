@@ -16,17 +16,28 @@ async function startWatch(gmail) {
   });
 }
 async function fetchRecentMessages(gmail) {
-  const messages = await gmail.users.messages.list({
+  const res = await gmail.users.messages.list({
     userId: "me",
-    q: "newer_than:7d", // Gmail search syntax
+    q: "newer_than:7d",
     maxResults: 10,
-    historyTypes: ["messageAdded"],
   });
-  logger.info(
-    `📬 Found ${messages.data.messages?.length || 0} recent messages`
-  );
-  return messages.data.messages || [];
+
+  const messages = res.data.messages || [];
+  logger.info(`📬 Found ${messages.length} recent messages`);
+  if (messages.length === 0) {
+    logger.info("No recent messages found");
+    return [];
+  }
+  const fullMsg = await gmail.users.messages.get({
+    userId: "me",
+    id: messages[0].id,
+    format: "metadata", // lightweight, still includes historyId
+  });
+  const firstHistoryId = fullMsg.data.historyId;
+
+  return firstHistoryId;
 }
+
 function createOAuth2Client(userData) {
   const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
@@ -80,7 +91,7 @@ async function startGmailWatchService(userData) {
     logger.info("📋 Current historyId:", profile.data.historyId);
 
     // ===== 3. Fetch recent activity log =====
-    await fetchRecentMessages(gmail);
+    const historyId = await fetchRecentMessages(gmail);
 
     // ===== 4. Start Gmail Watch =====
     const watchRes = await startWatch(gmail);
@@ -93,7 +104,7 @@ async function startGmailWatchService(userData) {
       watchExpiration: watchRes.data.expiration
         ? new Date(Number(watchRes.data.expiration))
         : null,
-      lastHistoryId: null, //Will be updated later
+      lastHistoryId: historyId, //Will be updated later
       isWatchActive: true,
     };
     const response = await saveUserConfig(userData.email, userConfigObj);
