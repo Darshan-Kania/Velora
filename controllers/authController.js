@@ -46,7 +46,7 @@ async function authenticateUser(req) {
       userId: user._id,
     });
   } catch (err) {
-    logger.error(`❌ Failed to retrieve or register user: ${userData.email}`, {
+    logger.error(`❌ Failed to retrieve or register user: ${userData.email} --> ${err.message}`, {
       error: err.message,
       stack: err.stack,
     });
