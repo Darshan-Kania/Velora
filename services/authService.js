@@ -9,9 +9,6 @@ async function verifyAndClearTokens(curToken) {
     const user = await UserModel.findOne({ jwtToken: curToken });
     if (user) {
       user.jwtToken = undefined;
-      user.accessToken = undefined;
-      user.refreshToken = undefined;
-      user.expiresAt = undefined;
       user.isActive = false;
       await user.save();
       logger.info(
