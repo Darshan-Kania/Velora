@@ -34,6 +34,15 @@ app.get("/", (req, res) => {
   logger.info("👋 Root endpoint hit");
   res.status(200).send("Hello World");
 });
+app.get("/health", (req, res) => {
+  try {
+    logger.info("🩺 Health check endpoint hit");
+    res.status(200).send("Server is healthy");
+  } catch (err) {
+    logger.error("❌ Health check error: " + (err.stack || err.message || err));
+    res.status(500).send("Health check failed");
+  }
+});
 
 // Error Handler
 app.use((err, req, res, next) => {
