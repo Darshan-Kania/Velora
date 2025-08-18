@@ -1,6 +1,7 @@
 import { UserModel } from "../models/User.js";
 import { google } from "googleapis";
 import { logger } from "../utils/logger.js";
+import { UserConfigModel } from "../models/UserConfig.js";
 function createOAuthClient(user) {
   const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
@@ -49,9 +50,9 @@ async function refreshExpiringTokens() {
   }
 }
 async function restartWatch() {
-  // Whoose expiredAt is less than now + 1 day
-  const users = await UserModel.find({
-    expiresAt: { $lte: Date.now() + 24 * 60 * 60 * 1000 },
+  // Whoose watchExpiration is less than now + 1 day
+  const users = await UserConfigModel.find({
+    watchExpiration: { $lte: Date.now() + 24 * 60 * 60 * 1000 },
   });
   logger.info(`👥 Restarting watch for ${users.length} users`);
 
