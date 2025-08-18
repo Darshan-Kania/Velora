@@ -1,7 +1,8 @@
-import {UserModel} from "../models/User.js";
+import { UserModel } from "../models/User.js";
 import { google } from "googleapis";
 import { logger } from "../utils/logger.js";
-export function createOAuthClient(user) {
+import { UserConfigModel } from "../models/UserConfig.js";
+function createOAuthClient(user) {
   const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
@@ -17,7 +18,7 @@ export function createOAuthClient(user) {
   return oauth2Client;
 }
 
-export async function refreshExpiringTokens() {
+async function refreshExpiringTokens() {
   const now = Date.now();
   const threshold = 10 * 60 * 1000; // 10 min before expiry
 
@@ -48,3 +49,38 @@ export async function refreshExpiringTokens() {
     }
   }
 }
+async function restartWatch() {
+  // Whoose watchExpiration is less than now + 1 day
+  const userConfigs = await UserConfigModel.find({
+    watchExpiration: { $lte: Date.now() + 24 * 60 * 60 * 1000 },
+  });
+  logger.info(`👥 Restarting watch for ${userConfigs.length} users`);
+
+  for (const user of userConfigs) {
+    try {
+      const oauth2Client = createOAuthClient(user);
+      const gmail = google.gmail({ version: "v1", auth: oauth2Client });
+
+      // Restart watch
+      const watchResponse = await gmail.users.watch({
+        userId: "me",
+        requestBody: {
+          labelIds: ["INBOX"],
+          topicName: process.env.GOOGLE_PUBSUB_TOPIC,
+        },
+      });
+      user.watchExpiration = watchResponse.data.expiration
+        ? new Date(Number(watchResponse.data.expiration))
+        : null;
+      user.isWatchActive = true;
+      await user.save();
+      logger.info(`✅ Watch restarted for ${user.email}`);
+    } catch (err) {
+      logger.error(
+        `❌ Failed to restart watch for ${user.email}:`,
+        err.message
+      );
+    }
+  }
+}
+export { refreshExpiringTokens, restartWatch };
