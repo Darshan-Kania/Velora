@@ -51,25 +51,29 @@ async function refreshExpiringTokens() {
 }
 async function restartWatch() {
   // Whoose watchExpiration is less than now + 1 day
-  const users = await UserConfigModel.find({
+  const userConfigs = await UserConfigModel.find({
     watchExpiration: { $lte: Date.now() + 24 * 60 * 60 * 1000 },
   });
-  logger.info(`👥 Restarting watch for ${users.length} users`);
+  logger.info(`👥 Restarting watch for ${userConfigs.length} users`);
 
-  for (const user of users) {
+  for (const user of userConfigs) {
     try {
       const oauth2Client = createOAuthClient(user);
       const gmail = google.gmail({ version: "v1", auth: oauth2Client });
 
       // Restart watch
-      await gmail.users.watch({
+      const watchResponse = await gmail.users.watch({
         userId: "me",
         requestBody: {
           labelIds: ["INBOX"],
           topicName: process.env.GOOGLE_PUBSUB_TOPIC,
         },
       });
-
+      user.watchExpiration = watchResponse.data.expiration
+        ? new Date(Number(watchResponse.data.expiration))
+        : null;
+      user.isWatchActive = true;
+      await user.save();
       logger.info(`✅ Watch restarted for ${user.email}`);
     } catch (err) {
       logger.error(
