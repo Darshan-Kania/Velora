@@ -35,7 +35,6 @@ app.get("/", (req, res) => {
   res.status(200).send("Hello World");
 });
 app.get("/health", (req, res) => {
-  logger.info("🩺 Health check endpoint hit");
   try {
     logger.info("🩺 Health check endpoint hit");
     res.status(200).send("Server is healthy");
