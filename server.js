@@ -34,6 +34,10 @@ app.get("/", (req, res) => {
   logger.info("👋 Root endpoint hit");
   res.status(200).send("Hello World");
 });
+app.get("/health", (req, res) => {
+  logger.info("🩺 Health check endpoint hit");
+  res.status(200).send("Server is healthy");
+});
 
 // Error Handler
 app.use((err, req, res, next) => {
