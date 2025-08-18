@@ -18,6 +18,9 @@ router.post("/notifications", async (req, res) => {
         historyId,
         messageId,
       });
+      setTimeout(async () => {
+        // To let Gmail Make Indexing
+      }, 1800); // Delay to ensure Pub/Sub processing
       await extractNotificationData(email, historyId, messageId);
       
     }
