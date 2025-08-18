@@ -7,7 +7,7 @@ import "./middleware/passport.js";
 import { logger } from "./utils/logger.js";
 import { authRoutes } from "./routes/authRoutes.js";
 import { gmailRoutes } from "./routes/gmailRoutes.js";
-
+import  "./utils/jobs.js"
 const app = express();
 connectDb();
 // Middleware

@@ -56,6 +56,7 @@ async function saveNewUser(userData, jwtToken) {
     name: userData.name,
     accessToken: userData.accessToken,
     refreshToken: userData.refreshToken,
+    accessTokenExpiresAt: new Date(Date.now() + 60 * 60 * 1000),
     jwtToken: jwtToken,
     expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   });
@@ -72,6 +73,7 @@ async function updateExistingUser(existingUser, userData, jwtToken) {
   existingUser.refreshToken = userData.refreshToken;
   existingUser.jwtToken = jwtToken;
   existingUser.expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  existingUser.accessTokenExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
   existingUser.isActive = true;
   await existingUser.save();
   logger.info(`✅ User ${userData.email} updated successfully`);

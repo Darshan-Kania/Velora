@@ -20,7 +20,10 @@ const userSchema = new mongoose.Schema(
       type: String,
     },
     expiresAt: {
-      type: Date, // Access token expiry
+      type: Date, // JWT token expiry
+    },
+    accessTokenExpiresAt: {
+      type: Date,
     },
     // JWT for your own app
     jwtToken: {
