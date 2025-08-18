@@ -1,6 +1,6 @@
 import {UserModel} from "../models/User.js";
 import { google } from "googleapis";
-
+import { logger } from "../utils/logger.js";
 export function createOAuthClient(user) {
   const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
@@ -25,7 +25,7 @@ export async function refreshExpiringTokens() {
     accessTokenExpiresAt: { $lte: now + threshold },
   });
 
-  console.log(`👥 Found ${users.length} users with expiring tokens`);
+  logger.info(`👥 Found ${users.length} users with expiring tokens`);
 
   for (const user of users) {
     try {
@@ -38,10 +38,10 @@ export async function refreshExpiringTokens() {
       user.accessToken = newToken.token;
       user.accessTokenExpiresAt = oauth2Client.credentials.expiry_date;
       await user.save();
-      
-      console.log(`✅ Refreshed token for ${user.email}`);
+
+      logger.info(`✅ Refreshed token for ${user.email}`);
     } catch (err) {
-      console.error(
+      logger.error(
         `❌ Failed to refresh token for ${user.email}:`,
         err.message
       );
