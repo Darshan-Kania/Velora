@@ -4,7 +4,7 @@ import { logger } from "../utils/logger.js";
 // import "dotenv/config";
 async function fetchPendingMails() {
   // Implementation for fetching pending mails
-  const pendingMails = await EmailModel.find({ toSummmarize: true, isSummarized: false });
+  const pendingMails = await EmailModel.find({ toSummarize: true, isSummarized: false });
   logger.info(`Fetched ${pendingMails.length} pending mails for summarization.`);
   return pendingMails;
 }
