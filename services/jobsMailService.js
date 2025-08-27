@@ -30,6 +30,11 @@ async function summarizeMails(pendingMails) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ mails: decryptedMails }),
     });
+    if (!res.ok) {
+      const errorText = await res.text();
+      logger.error(`❌ N8N API error: ${res.status} ${res.statusText} - ${errorText}`);
+      return [];
+    }
     const summarizedMails = await res.json();
     return summarizedMails;
   } catch (error) {
