@@ -52,6 +52,6 @@ cron.schedule("*/20 * * * * *", async () => {
 
     await storeSummarizedMails(summarizedMails);
   } catch (err) {
-    logger.error(`❌ Error restarting watch: ${err.message}`);
+    logger.error(`❌ Error in email summarization job: ${err.message}`);
   }
 });
