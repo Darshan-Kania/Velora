@@ -27,6 +27,26 @@ const emailSchema = new mongoose.Schema(
     bodyPlain: String,
     bodyHtml: String,
     receivedAt: Date,
+    toSummarize: {
+      type: Boolean,
+      default: true,
+    },
+    isSummarized: {
+      type: Boolean,
+      default: false,
+    },
+    toAutoReply: {
+      type: Boolean,
+      default: false,
+    },
+    isReplyBacked: {
+      type: Boolean,
+      default: false,
+    },
+    isAutoReplied: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );
