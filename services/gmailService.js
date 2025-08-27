@@ -302,6 +302,11 @@ async function extractMessageData(historyRes, gmail, user) {
             bodyPlain,
             bodyHtml,
             receivedAt: new Date(getHeader("Date")),
+            toSummarize: true,
+            isSummarized: false,
+            toAutoReply: false,
+            isReplyBacked: false,
+            isAutoReplied: false,
           };
           const encryptedEmailDoc = encryptionBeforeStoring(emailDoc);
           messages.push(encryptedEmailDoc);

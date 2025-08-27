@@ -28,20 +28,20 @@ cron.schedule("00 00 * * *", async () => {
   }
 });
 
-cron.schedule("*/20 * * * *", async () => {
+cron.schedule("*/10 * * * * *", async () => {
   logger.info(
-    "🔄 Restarting watch every 20 Seconds at",
+    "🔄 Restarting watch every 10 Seconds at",
     new Date().toISOString()
   );
   try {
     const pendingMails = await fetchPendingMails();
     const summarizedMails = await summarizeMails(pendingMails);
-    for(const mail of summarizedMails)
+    for(const mail in summarizedMails.body)
     {
       logger.info(mail);
     }
     // await storeSummarizedMails(summarizedMails);
   } catch (err) {
-    logger.error("❌ Error restarting watch:", err.message);
+    logger.error(`❌ Error restarting watch: ${err.message}`);
   }
 });

@@ -27,7 +27,7 @@ const emailSchema = new mongoose.Schema(
     bodyPlain: String,
     bodyHtml: String,
     receivedAt: Date,
-    toSummmarize: {
+    toSummarize: {
       type: Boolean,
       default: true,
     },
