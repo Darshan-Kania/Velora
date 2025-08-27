@@ -1,9 +1,9 @@
 import cron from "node-cron";
 import {
   refreshExpiringTokens,
-  restartWatch
+  restartWatch,
 } from "../services/jobsService.js";
-import{
+import {
   fetchPendingMails,
   summarizeMails,
   storeSummarizedMails,
@@ -28,19 +28,29 @@ cron.schedule("00 00 * * *", async () => {
   }
 });
 
-cron.schedule("*/10 * * * * *", async () => {
-  logger.info(
-    "🔄 Restarting watch every 10 Seconds at",
-    new Date().toISOString()
-  );
+cron.schedule("*/20 * * * * *", async () => {
+  logger.info("🔄 Restarting watch every 20 Seconds at", new Date().toISOString());
   try {
     const pendingMails = await fetchPendingMails();
-    const summarizedMails = await summarizeMails(pendingMails);
-    for(const mail in summarizedMails.body)
-    {
-      logger.info(mail);
+    if (pendingMails.length === 0) {
+      logger.info("No pending mails to summarize.");
+      return;
     }
-    // await storeSummarizedMails(summarizedMails);
+    const summarizedMails = await summarizeMails(pendingMails)
+      .catch((err) => {
+        logger.error(`❌ Error summarizing mails: ${err.message}`);
+        return [];
+      });
+
+    // Now summarizedMails is already an array
+    if (summarizedMails.length > 0) {
+      logger.info(`🧐 Summarizing Mails`);
+    } else {
+      logger.info("⚠️ No mails summarized this cycle.");
+      return;
+    }
+
+    await storeSummarizedMails(summarizedMails);
   } catch (err) {
     logger.error(`❌ Error restarting watch: ${err.message}`);
   }
