@@ -1,5 +1,13 @@
 import cron from "node-cron";
-import { refreshExpiringTokens,restartWatch } from "../services/jobsService.js";
+import {
+  refreshExpiringTokens,
+  restartWatch
+} from "../services/jobsService.js";
+import{
+  fetchPendingMails,
+  summarizeMails,
+  storeSummarizedMails,
+} from "../services/jobsMailService.js";
 import { logger } from "./logger.js";
 // Runs every 25 minutes
 cron.schedule("*/25 * * * *", async () => {
@@ -17,5 +25,19 @@ cron.schedule("00 00 * * *", async () => {
     await restartWatch();
   } catch (err) {
     logger.error("❌ Error running daily job:", err);
+  }
+});
+
+cron.schedule("*/20 * * * *", async () => {
+  logger.info(
+    "🔄 Restarting watch every 20 Seconds at",
+    new Date().toISOString()
+  );
+  try {
+    const pendingMails = await fetchPendingMails();
+    const summarizedMails = await summarizeMails(pendingMails);
+    await storeSummarizedMails(summarizedMails);
+  } catch (err) {
+    logger.error("❌ Error restarting watch:", err.message);
   }
 });
