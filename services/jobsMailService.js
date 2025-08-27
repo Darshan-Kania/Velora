@@ -14,6 +14,7 @@ async function summarizeMails(pendingMails) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ mails: decryptedMails }),
   });
+  return res;
 }
 async function storeSummarizedMails(summarizedMails) {
   // Implementation for storing summarized mails

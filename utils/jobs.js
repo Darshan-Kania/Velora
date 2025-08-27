@@ -36,7 +36,11 @@ cron.schedule("*/20 * * * *", async () => {
   try {
     const pendingMails = await fetchPendingMails();
     const summarizedMails = await summarizeMails(pendingMails);
-    await storeSummarizedMails(summarizedMails);
+    for(const mail of summarizedMails)
+    {
+      logger.info(mail);
+    }
+    // await storeSummarizedMails(summarizedMails);
   } catch (err) {
     logger.error("❌ Error restarting watch:", err.message);
   }
