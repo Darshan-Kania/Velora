@@ -1,4 +1,3 @@
-import { log } from "winston";
 import { EmailModel } from "../models/Email.js";
 import { decryptField } from "../utils/encryptHelper.js";
 import { logger } from "../utils/logger.js";
