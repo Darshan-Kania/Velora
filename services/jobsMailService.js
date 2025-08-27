@@ -75,7 +75,7 @@ async function decryptMailContent(mail) {
     };
   } catch (error) {
     logger.error(`❌ Error decrypting mail content: ${error.message}`);
-    return mail; // Return the original mail if decryption fails
+    return null; // Return the original mail if decryption fails
   }
 }
 export { fetchPendingMails, summarizeMails, storeSummarizedMails };
