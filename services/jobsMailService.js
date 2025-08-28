@@ -1,6 +1,7 @@
 import { EmailModel } from "../models/Email.js";
 import { decryptField } from "../utils/encryptHelper.js";
 import { logger } from "../utils/logger.js";
+import jwt from "jsonwebtoken";
 // import "dotenv/config";
 async function fetchPendingMails() {
   // Implementation for fetching pending mails
@@ -25,14 +26,24 @@ async function summarizeMails(pendingMails) {
       pendingMails.map(decryptMailContent)
     );
     // Call N8N for the whole array of decrypted mails
+    const token = jwt.sign(
+      { service: "velora" }, // payload (anything minimal)
+      process.env.N8N_JWT_SECRET, // must match secret you set in n8n credential
+      { expiresIn: "1h" } // optional
+    );
     const res = await fetch(`${process.env.N8N_BASE_URL}/mail-summarizer`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`, // 🔑 required for n8n Webhook auth
+      },
       body: JSON.stringify({ mails: decryptedMails }),
     });
     if (!res.ok) {
       const errorText = await res.text();
-      logger.error(`❌ N8N API error: ${res.status} ${res.statusText} - ${errorText}`);
+      logger.error(
+        `❌ N8N API error: ${res.status} ${res.statusText} - ${errorText}`
+      );
       return [];
     }
     const summarizedMails = await res.json();
