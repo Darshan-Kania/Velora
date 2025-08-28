@@ -51,6 +51,7 @@ cron.schedule("*/20 * * * * *", async () => {
     }
 
     await storeSummarizedMails(summarizedMails);
+    logger.info("✅ Stored summarized mails successfully.");
   } catch (err) {
     logger.error(`❌ Error in email summarization job: ${err.message}`);
   }
