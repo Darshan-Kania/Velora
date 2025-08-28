@@ -1,4 +1,5 @@
 import { EmailModel } from "../models/Email.js";
+import { SummarizedEmailModel } from "../models/summarizedEmail.js";
 import { decryptField } from "../utils/encryptHelper.js";
 import { logger } from "../utils/logger.js";
 import jwt from "jsonwebtoken";
@@ -57,20 +58,21 @@ async function storeSummarizedMails(summarizedMails) {
   // Implementation for storing summarized mails
   try {
     await Promise.all(
-      summarizedMails.map(
-        async (mail) =>
-          await EmailModel.updateOne(
-            { gmailMessageId: mail.gmailMessageId },
-            {
-              $set: {
-                isSummarized: true,
-                summarizedSubject: mail.summarizedSubject,
-                summarizedBody: mail.summarizedBody,
-                summarizedSnippet: mail.summarizedSnippet,
-              },
-            }
-          )
-      )
+      summarizedMails.map(async (mail) => {
+        await EmailModel.updateOne(
+          { gmailMessageId: mail.gmailMessageId },
+          {
+            $set: {
+              isSummarized: true,
+            },
+          }
+        );
+        await SummarizedEmailModel.create({
+          gmailMessageId: mail.gmailMessageId,
+          summary: mail.summarizedBody,
+          explaination: mail.explaination || "",
+        });
+      })
     );
   } catch (error) {
     logger.error(`❌ Error storing summarized mails: ${error.message}`);
