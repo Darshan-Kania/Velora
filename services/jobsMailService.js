@@ -69,7 +69,7 @@ async function storeSummarizedMails(summarizedMails) {
         );
         await SummarizedEmailModel.create({
           gmailMessageId: mail.gmailMessageId,
-          summary: mail.summarizedBody,
+          summary: mail.summary,
           explaination: mail.explaination || "",
         });
       })
