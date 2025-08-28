@@ -102,6 +102,7 @@ function encryptSummarizedMail(mail) {
     if (mail.explaination) {
       mail.explaination = encryptField(mail.explaination);
     }
+    return mail;
   } catch (error) {
     logger.error(`❌ Error encrypting summarized mail: ${error.message}`);
   }
