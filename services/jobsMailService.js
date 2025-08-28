@@ -1,6 +1,6 @@
 import { EmailModel } from "../models/Email.js";
 import { SummarizedEmailModel } from "../models/summarizedEmail.js";
-import { decryptField } from "../utils/encryptHelper.js";
+import { decryptField, encryptField } from "../utils/encryptHelper.js";
 import { logger } from "../utils/logger.js";
 import jwt from "jsonwebtoken";
 // import "dotenv/config";
@@ -67,6 +67,7 @@ async function storeSummarizedMails(summarizedMails) {
             },
           }
         );
+        mail = encryptSummarizedMail(mail);
         await SummarizedEmailModel.create({
           gmailMessageId: mail.gmailMessageId,
           summary: mail.summary,
@@ -93,6 +94,16 @@ async function decryptMailContent(mail) {
   } catch (error) {
     logger.error(`❌ Error decrypting mail content: ${error.message}`);
     return null; // Return the original mail if decryption fails
+  }
+}
+function encryptSummarizedMail(mail) {
+  try {
+    mail.summary = encryptField(mail.summary);
+    if (mail.explaination) {
+      mail.explaination = encryptField(mail.explaination);
+    }
+  } catch (error) {
+    logger.error(`❌ Error encrypting summarized mail: ${error.message}`);
   }
 }
 export { fetchPendingMails, summarizeMails, storeSummarizedMails };
