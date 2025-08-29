@@ -20,7 +20,7 @@ async function fetchPendingMails() {
     return [];
   }
 }
-async function summarizeMails(pendingMails) {
+async function summarizeMails(pendingMails, chainNo ) {
   // Implementation for summarizing mails
   try {
     const decryptedMails = await Promise.all(
@@ -37,6 +37,7 @@ async function summarizeMails(pendingMails) {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`, // 🔑 required for n8n Webhook auth
+        "Chain-No": chainNo.toString(), // Custom header to specify chain number
       },
       body: JSON.stringify({ mails: decryptedMails }),
     });

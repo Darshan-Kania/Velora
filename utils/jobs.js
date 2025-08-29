@@ -29,18 +29,36 @@ cron.schedule("00 00 * * *", async () => {
 });
 
 cron.schedule("*/20 * * * * *", async () => {
-  logger.info("🔄 Restarting watch every 20 Seconds at", new Date().toISOString());
+  logger.info(
+    "🔄 Restarting watch every 20 Seconds at",
+    new Date().toISOString()
+  );
   try {
     const pendingMails = await fetchPendingMails();
     if (pendingMails.length === 0) {
       logger.info("No pending mails to summarize.");
       return;
     }
-    const summarizedMails = await summarizeMails(pendingMails)
-      .catch((err) => {
-        logger.error(`❌ Error summarizing mails: ${err.message}`);
-        return [];
-      });
+    let chainNo=null;
+    try {
+      // If currently in first half of the minute, set count = 0; otherwise count = 1
+      const seconds = new Date().getSeconds();
+      const count = seconds < 30 ? 0 : 1;
+      if (count === 0) {
+        logger.info("Use LLM Chain no 1");
+        chainNo=0;
+      }
+      else {
+        logger.info("Use LLM Chain no 2");
+        chainNo=1;
+      }
+    } catch (err) {
+      logger.error("❌ Error selecting LLM chain:", err.message);
+    }
+    const summarizedMails = await summarizeMails(pendingMails, chainNo || 0).catch((err) => {
+      logger.error(`❌ Error summarizing mails: ${err.message}`);
+      return [];
+    });
 
     // Now summarizedMails is already an array
     if (summarizedMails.length > 0) {
