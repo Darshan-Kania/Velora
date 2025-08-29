@@ -90,7 +90,7 @@ router.get("/email/:id", async (req, res) => {
       data: decryptedEmail,
     });
   } catch (err) {
-    console.error("❌ Fetch email error:", err);
+    logger.error('❌ Fetch email error:', err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
