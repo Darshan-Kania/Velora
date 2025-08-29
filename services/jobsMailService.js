@@ -68,11 +68,16 @@ async function storeSummarizedMails(summarizedMails) {
           }
         );
         mail = encryptSummarizedMail(mail);
-        await SummarizedEmailModel.create({
-          gmailMessageId: mail.gmailMessageId,
-          summary: mail.summary,
-          explaination: mail.explaination || "",
-        });
+        await SummarizedEmailModel.updateOne(
+          { gmailMessageId: mail.gmailMessageId },
+          {
+            $set: {
+              summary: mail.summary,
+              explaination: mail.explaination || "",
+            },
+          },
+          { upsert: true }
+        );
       })
     );
   } catch (error) {
