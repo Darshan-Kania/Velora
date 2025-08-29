@@ -1,19 +1,29 @@
 import { decryptField } from "../utils/encryptHelper.js";
 
+function safeDecrypt(value) {
+  if (!value) return value;
+  try {
+    return decryptField(value);
+  } catch (e) {
+    return value;
+  }
+}
+
 async function decryptEmails(emails) {
   return Promise.all(
     emails.map(async (email) => {
       const e = email.toObject ? email.toObject() : { ...email };
-      // Decrypt only fields we actually encrypt
-      e.from = e.from ? decryptField(e.from) : e.from;
-      e.to = e.to ? decryptField(e.to) : e.to;
-      e.subject = e.subject ? decryptField(e.subject) : e.subject;
-      e.snippet = e.snippet ? decryptField(e.snippet) : e.snippet;
-      e.bodyPlain = e.bodyPlain ? decryptField(e.bodyPlain) : e.bodyPlain;
-      e.bodyHtml = e.bodyHtml ? decryptField(e.bodyHtml) : e.bodyHtml;
+      // Decrypt only fields we actually encrypt, safely
+      e.from = safeDecrypt(e.from);
+      e.to = safeDecrypt(e.to);
+      e.subject = safeDecrypt(e.subject);
+      e.snippet = safeDecrypt(e.snippet);
+      e.bodyPlain = safeDecrypt(e.bodyPlain);
+      e.bodyHtml = safeDecrypt(e.bodyHtml);
+      // Do not decrypt e.summary here; summaries are stored separately and not encrypted
       return e;
     })
   );
 }
 
-export { decryptEmails };
+export { decryptEmails , safeDecrypt };
