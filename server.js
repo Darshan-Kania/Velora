@@ -7,7 +7,9 @@ import "./middleware/passport.js";
 import { logger } from "./utils/logger.js";
 import { authRoutes } from "./routes/authRoutes.js";
 import { gmailRoutes } from "./routes/gmailRoutes.js";
+import { dashboardRoutes } from "./routes/dashboardRoutes.js";
 import  "./utils/jobs.js"
+import { verifyToken } from "./middleware/verifyToken.js";
 const app = express();
 connectDb();
 // Middleware
@@ -30,6 +32,7 @@ app.use((req, res, next) => {
 // Routes
 app.use("/auth", authRoutes);
 app.use("/gmail", express.json(), gmailRoutes);
+app.use("/dashboard", cookieParser(), verifyToken, dashboardRoutes);
 app.get("/", (req, res) => {
   logger.info("👋 Root endpoint hit");
   res.status(200).send("Hello World");
