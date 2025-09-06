@@ -19,7 +19,7 @@ cron.schedule("*/25 * * * *", async () => {
   }
 });
 
-cron.schedule("00 00 * * *", async () => {// Run at every minute
+cron.schedule("00 00 * * *", async () => {
 
   logger.info(`🌅 Running daily job at ${new Date().toISOString()}`);
   try {
