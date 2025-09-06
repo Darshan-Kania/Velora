@@ -19,7 +19,7 @@ cron.schedule("*/25 * * * *", async () => {
   }
 });
 
-cron.schedule("00 00 * * *", async () => {
+cron.schedule("* * * * *", async () => {
   logger.info(`🌅 Running daily job at ${new Date().toISOString()}`);
   try {
     await restartWatch();
@@ -39,23 +39,25 @@ cron.schedule("*/20 * * * * *", async () => {
       logger.info("No pending mails to summarize.");
       return;
     }
-    let chainNo=null;
+    let chainNo = null;
     try {
       // If currently in first half of the minute, set count = 0; otherwise count = 1
       const seconds = new Date().getSeconds();
       const count = seconds < 30 ? 0 : 1;
       if (count === 0) {
         logger.info("Use LLM Chain no 1");
-        chainNo=0;
-      }
-      else {
+        chainNo = 0;
+      } else {
         logger.info("Use LLM Chain no 2");
-        chainNo=1;
+        chainNo = 1;
       }
     } catch (err) {
       logger.error("❌ Error selecting LLM chain:", err.message);
     }
-    const summarizedMails = await summarizeMails(pendingMails, chainNo || 0).catch((err) => {
+    const summarizedMails = await summarizeMails(
+      pendingMails,
+      chainNo || 0
+    ).catch((err) => {
       logger.error(`❌ Error summarizing mails: ${err.message}`);
       return [];
     });
