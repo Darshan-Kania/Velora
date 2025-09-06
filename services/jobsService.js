@@ -56,8 +56,9 @@ async function restartWatch() {
   });
   logger.info(`👥 Restarting watch for ${userConfigs.length} users`);
 
-  for (const user of userConfigs) {
+  for (const userConfig of userConfigs) {
     try {
+      const user = userConfig.user;
       const oauth2Client = createOAuthClient(user);
       const gmail = google.gmail({ version: "v1", auth: oauth2Client });
 
@@ -69,15 +70,15 @@ async function restartWatch() {
           topicName: process.env.GOOGLE_PUBSUB_TOPIC,
         },
       });
-      user.watchExpiration = watchResponse.data.expiration
+      userConfig.watchExpiration = watchResponse.data.expiration
         ? new Date(Number(watchResponse.data.expiration))
         : null;
-      user.isWatchActive = true;
-      await user.save();
+      userConfig.isWatchActive = true;
+      await userConfig.save();
       logger.info(`✅ Watch restarted for ${user.email}`);
     } catch (err) {
       logger.error(
-        `❌ Failed to restart watch for ${user.email}:`,
+        `❌ Failed to restart watch for ${userConfig.user.email}:`,
         err.message
       );
     }
