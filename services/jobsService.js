@@ -58,7 +58,7 @@ async function restartWatch() {
 
   for (const userConfig of userConfigs) {
     try {
-      const user = userConfig.user;
+      const user = await UserModel.findById(userConfig.user);
       const oauth2Client = createOAuthClient(user);
       const gmail = google.gmail({ version: "v1", auth: oauth2Client });
 
@@ -78,7 +78,7 @@ async function restartWatch() {
       logger.info(`✅ Watch restarted for ${user.email}`);
     } catch (err) {
       logger.error(
-        `❌ Failed to restart watch for ${userConfig.user.email}:`,
+        `❌ Failed to restart watch for ${userConfig.user}:`,
         err.message
       );
     }
