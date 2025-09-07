@@ -2,7 +2,7 @@ import { Router } from "express";
 import { EmailModel } from "../models/Email.js";
 import { UserModel } from "../models/User.js";
 import { SummarizedEmailModel } from "../models/summarizedEmail.js";
-import { decryptEmails,safeDecrypt } from "../services/dashboardService.js";
+import { decryptEmails, safeDecrypt } from "../services/dashboardService.js";
 import { logger } from "../utils/logger.js";
 const router = Router();
 
@@ -27,22 +27,37 @@ router.get("/emails", async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    // Fetch emails and total count
-    let [emails, total] = await Promise.all([
-      EmailModel.find({ user: user._id })
-        .skip(skip)
-        .limit(limit)
-        .sort({ createdAt: -1 }), // newest first
-      EmailModel.countDocuments({ user: user._id }),
+    // Aggregate emails grouped by threadId and get latest email per thread
+    const aggregatedEmails = await EmailModel.aggregate([
+      { $match: { user: user._id } },
+      { $sort: { createdAt: -1 } }, // Sort by newest first
+      {
+        $group: {
+          _id: "$threadId",
+          latestEmail: { $first: "$$ROOT" }, // Keep latest email per thread
+        },
+      },
+      { $skip: skip },
+      { $limit: limit },
     ]);
+
+    // Total number of distinct threads
+    const totalThreads = await EmailModel.distinct("threadId", {
+      user: user._id,
+    });
+
+    // Extract only the latest emails
+    let emails = aggregatedEmails.map((e) => e.latestEmail);
+
     // Decrypt sensitive fields
     emails = await decryptEmails(emails);
+
     res.json({
       success: true,
-      total,
+      total: totalThreads.length,
       page,
       limit,
-      totalPages: Math.ceil(total / limit),
+      totalPages: Math.ceil(totalThreads.length / limit),
       data: emails,
     });
   } catch (err) {
@@ -50,6 +65,7 @@ router.get("/emails", async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
+
 router.get("/email/:id", async (req, res) => {
   try {
     const emailId = req.params.id;
@@ -90,7 +106,7 @@ router.get("/email/:id", async (req, res) => {
       data: decryptedEmail,
     });
   } catch (err) {
-    logger.error('❌ Fetch email error:', err);
+    logger.error("❌ Fetch email error:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
