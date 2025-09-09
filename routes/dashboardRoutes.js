@@ -12,45 +12,48 @@ router.get("/", (req, res) => {
 });
 router.get("/emails", async (req, res) => {
   try {
-    // Resolve user _id from JWT email
-    const user = await UserModel.findOne({ email: req.user.email }).select(
-      "_id email"
-    );
+    const user = await UserModel.findOne({ email: req.user.email }).select("_id email");
     if (!user) {
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
+      return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    // Get query params (defaults if not provided)
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    // Aggregate emails grouped by threadId and get latest email per thread
-    const aggregatedEmails = await EmailModel.aggregate([
+    // Step 1: Get distinct threadIds sorted by latest email creation time
+    const threads = await EmailModel.aggregate([
       { $match: { user: user._id } },
-      { $sort: { createdAt: -1 } }, // Sort by newest first
       {
         $group: {
           _id: "$threadId",
-          latestEmail: { $first: "$$ROOT" }, // Keep latest email per thread
+          latestCreatedAt: { $max: "$createdAt" },
         },
       },
+      { $sort: { latestCreatedAt: -1 } }, // Sort by latest email time
       { $skip: skip },
       { $limit: limit },
     ]);
 
-    // Total number of distinct threads
-    const totalThreads = await EmailModel.distinct("threadId", {
-      user: user._id,
-    });
+    const threadIds = threads.map((t) => t._id);
 
-    // Extract only the latest emails
-    let emails = aggregatedEmails.map((e) => e.latestEmail);
+    // Step 2: Fetch latest email per threadId efficiently
+    const emails = await EmailModel.aggregate([
+      { $match: { user: user._id, threadId: { $in: threadIds } } },
+      { $sort: { createdAt: -1 } }, // Sort emails descending by date
+      {
+        $group: {
+          _id: "$threadId",
+          latestEmail: { $first: "$$ROOT" },
+        },
+      },
+    ]);
 
     // Decrypt sensitive fields
-    emails = await decryptEmails(emails);
+    const decryptedEmails = await decryptEmails(emails.map((e) => e.latestEmail));
+
+    // Get total number of threads for pagination metadata
+    const totalThreads = await EmailModel.distinct("threadId", { user: user._id });
 
     res.json({
       success: true,
@@ -58,7 +61,7 @@ router.get("/emails", async (req, res) => {
       page,
       limit,
       totalPages: Math.ceil(totalThreads.length / limit),
-      data: emails,
+      data: decryptedEmails,
     });
   } catch (err) {
     console.error("❌ Pagination error:", err);
