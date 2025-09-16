@@ -29,9 +29,9 @@ cron.schedule("00 00 * * *", async () => {
   }
 });
 
-cron.schedule("*/20 * * * * *", async () => {
+cron.schedule("*/30 * * * * *", async () => {
   logger.info(
-    "🔄 Restarting watch every 20 Seconds at",
+    "🔄 Restarting watch every 30 Seconds at",
     new Date().toISOString()
   );
   try {
