@@ -8,14 +8,14 @@ import {
 } from "../controllers/authController.js";
 
 const router = express.Router();
-
+const FRONTEND_URL = process.env.FRONTEND_URL;
 // Step 1: Initiate Google OAuth
 router.get(
   "/google",
   async (req, res, next) => {
     if (await isAuthenticated(req)) {
       logger.info("✅ User already authenticated, redirecting to home");
-      res.redirect("/");
+      res.redirect(`${FRONTEND_URL}/dashboard`);
     } else {
       logger.info("🔁 Initiating Google OAuth");
       next();
@@ -66,23 +66,13 @@ router.get(
       logger.info(
         `🍪 JWT cookie set for ${user.email} (httpOnly: true, 7 days expiry)`
       );
-
-      res.status(200).json({
-        message: "Authentication successful",
-        jwtToken,
-        user: {
-          email: user.email,
-          name: user.name,
-        },
-      });
+      res.status(200).redirect(`${FRONTEND_URL}/auth/callback`);
     } catch (error) {
       logger.error("❌ Authentication failed", {
         error: error.message,
         stack: error.stack,
       });
-      res.status(500).json({
-        message: "Authentication failed",
-      });
+      res.status(500).redirect(`${FRONTEND_URL}/auth/callback`);
     }
   }
 );
@@ -93,13 +83,13 @@ router.get("/error401", (req, res) => {
   res.status(401).send("Unauthorized");
 });
 // Step 4: Logout route
-router.get("/logout", async (req, res) => {
+router.patch("/logout", async (req, res) => {
   try {
     logger.info("🔓 User logout initiated");
     await logoutUser(req, res);
     res.clearCookie("jwt");
     logger.info("🔓 JWT cookie cleared, redirecting to home");
-    return res.redirect("/");
+    return res.status(200).json({ message: "Logged out successfully" });
   } catch (error) {
     logger.error("❌ Logout failed", {
       error: error.message,
@@ -110,4 +100,19 @@ router.get("/logout", async (req, res) => {
     });
   }
 });
+router.get('/status', async (req, res) => {
+
+  try {
+    const isAuth = await isAuthenticated(req);
+    return res.status(200).json({ authenticated: isAuth });
+  } catch (err) {
+    logger.error("❌ Auth status check failed", {
+      error: err.message,
+      stack: err.stack,
+    });
+    return res.status(500).json({ authenticated: false, error: 'Auth status check failed' });
+  }
+
+});
+
 export { router as authRoutes };

@@ -10,7 +10,20 @@ import { gmailRoutes } from "./routes/gmailRoutes.js";
 import { dashboardRoutes } from "./routes/dashboardRoutes.js";
 import  "./utils/jobs.js"
 import { verifyToken } from "./middleware/verifyToken.js";
+import cors from 'cors';
 const app = express();
+const FRONTEND_URL = process.env.FRONTEND_URL 
+app.use((req, res, next) => {
+  if (req.path.startsWith('/auth/google')) {
+    // Skip CORS for OAuth routes
+    return next();
+  }
+
+  cors({
+    origin: FRONTEND_URL,
+    credentials: true
+  })(req, res, next);
+});
 connectDb();
 // Middleware
 app.use(cookieParser());
