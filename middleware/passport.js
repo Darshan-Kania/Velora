@@ -18,7 +18,7 @@ passport.use(
           accessToken:accessToken,
           refreshToken:refreshToken,
         };
-        logger.info("✅ Google profile received: " + JSON.stringify(userData));
+        logger.info("✅ Google profile received: " + JSON.stringify(userData.email));
         done(null, userData);
       } catch (error) {
         logger.error("❌ Error in Google Strategy verify callback: " + error.message);
