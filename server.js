@@ -8,6 +8,7 @@ import { logger } from "./utils/logger.js";
 import { authRoutes } from "./routes/authRoutes.js";
 import { gmailRoutes } from "./routes/gmailRoutes.js";
 import { dashboardRoutes } from "./routes/dashboardRoutes.js";
+import{ emailRoutes } from "./routes/emailRoutes.js";
 import  "./utils/jobs.js"
 import { verifyToken } from "./middleware/verifyToken.js";
 import cors from 'cors';
@@ -46,6 +47,7 @@ app.use((req, res, next) => {
 app.use("/auth", authRoutes);
 app.use("/gmail", express.json(), gmailRoutes);
 app.use("/dashboard", cookieParser(), verifyToken, dashboardRoutes);
+app.use("/emails", cookieParser(), verifyToken, emailRoutes);
 app.get("/", (req, res) => {
   logger.info("👋 Root endpoint hit");
   res.status(200).send("Hello World");
