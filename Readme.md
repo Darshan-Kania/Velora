@@ -88,7 +88,56 @@ MailFlare is a smart mailing system built on the MERN stack:
 
 ---
 
-## 🔐 Security & Privacy
+
+## � API Endpoints
+
+### Auth
+- `GET /auth/google` — Initiate Google OAuth login
+- `GET /auth/google/callback` — Google OAuth callback
+- `GET /auth/error401` — Unauthorized error
+- `PATCH /auth/logout` — Logout user
+- `GET /auth/status` — Check authentication status
+
+### Dashboard
+- `GET /dashboard/` — Welcome message (requires auth)
+- `GET /dashboard/userProfile` — Get user profile
+- `GET /dashboard/EmailCount` — Get total email count (supports `?label=unread` and `?label=today`)
+- `GET /dashboard/topContacts` — (To be implemented)
+- `GET /dashboard/activity` — (To be implemented)
+
+### Email
+- `GET /emails/` — Get paginated emails for user
+- `GET /emails/:id` — Get a specific email (with summary)
+
+### Gmail
+- `POST /gmail/notifications` — Gmail Pub/Sub webhook endpoint
+
+---
+
+## 🌐 DNS Management for .tech Domains
+
+To use your .tech domain (e.g., `mailflare.tech`) for MailFlare, you need to configure DNS records:
+
+1. **A Record**: Points your domain to your server's public IP address (for backend/frontend hosting)
+   - Example: `@  IN  A  123.45.67.89`
+2. **CNAME Record**: For subdomains (e.g., `www` or `n8n`)
+   - Example: `www  IN  CNAME  mailflare.tech.`
+   - Example: `n8n  IN  CNAME  mailflare.tech.`
+3. **MX Record**: (If you want to receive emails directly)
+   - Example: `@  IN  MX  10 mail.mailflare.tech.`
+4. **TXT Record**: For domain verification, SPF, DKIM, or Google site verification
+   - Example: `@  IN  TXT  "v=spf1 include:_spf.google.com ~all"`
+   - Example: `google-site-verification=...`
+
+**How to update:**
+- Go to your domain registrar (e.g., GoDaddy, Namecheap, or your .tech provider)
+- Find DNS Management or DNS Zone Editor
+- Add or update the above records as needed
+- DNS changes may take up to 24 hours to propagate
+
+**Tip:** For Google OAuth, make sure your domain is added as an authorized domain in Google Cloud Console.
+
+---
 
 At MailFlare, your privacy is our priority:
 
