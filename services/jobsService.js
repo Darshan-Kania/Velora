@@ -52,7 +52,7 @@ async function refreshExpiringTokens() {
 async function restartWatch() {
   // Whose watchExpiration is less than now + 3 days
   const userConfigs = await UserConfigModel.find({
-    watchExpiration: { $lte: Date.now() + 72 * 60 * 60 * 1000 },
+    watchExpiration: { $lte: new Date(Date.now() + 72 * 60 * 60 * 1000) },
   });
   logger.info(`👥 Restarting watch for ${userConfigs.length} users`);
 
