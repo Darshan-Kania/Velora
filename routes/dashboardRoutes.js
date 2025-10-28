@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { EmailModel } from "../models/Email.js";
 import { UserModel } from "../models/User.js";
+import { UserConfigModel } from "../models/UserConfig.js";
 import { SummarizedEmailModel } from "../models/summarizedEmail.js";
 import { decryptEmails,safeDecrypt } from "../services/dashboardService.js";
 import { logger } from "../utils/logger.js";
@@ -70,4 +71,74 @@ router.get("/topContacts", async (req, res) => {
 router.get("/activity", async (req, res) => {
   res.status(200).send("To be implemented");
 });
+
+// Get user's email filters
+router.get("/filters", async (req, res) => {
+  try {
+    const user = await UserModel.findOne({ email: req.user.email }).select("_id email");
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const userConfig = await UserConfigModel.findOne({ user: user._id });
+    if (!userConfig) {
+      return res.json({
+        success: true,
+        data: { emailFilters: [] }
+      });
+    }
+
+    res.json({
+      success: true,
+      data: { emailFilters: userConfig.excludedEmailsToSummarize || [] }
+    });
+  } catch (err) {
+    logger.error("❌ Get filters error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+// Update user's email filters
+router.post("/updateFilters", async (req, res) => {
+  try {
+    const { emailFilters } = req.body;
+    
+    if (!Array.isArray(emailFilters)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "emailFilters must be an array" 
+      });
+    }
+
+    const user = await UserModel.findOne({ email: req.user.email }).select("_id email");
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // Update or create user config
+    const userConfig = await UserConfigModel.findOneAndUpdate(
+      { user: user._id },
+      { 
+        $set: { 
+          excludedEmailsToSummarize: emailFilters.map(email => email.toLowerCase().trim())
+        } 
+      },
+      { new: true, upsert: true }
+    );
+
+    logger.info(`✅ Updated email filters for ${user.email}`, { 
+      filters: emailFilters 
+    });
+
+    res.json({
+      success: true,
+      message: "Email filters updated successfully",
+      data: { emailFilters: userConfig.excludedEmailsToSummarize }
+    });
+  } catch (err) {
+    logger.error("❌ Update filters error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
 export { router as dashboardRoutes };

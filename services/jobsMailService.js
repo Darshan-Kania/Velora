@@ -1,4 +1,5 @@
 import { EmailModel } from "../models/Email.js";
+import { UserConfigModel } from "../models/UserConfig.js";
 import { SummarizedEmailModel } from "../models/summarizedEmail.js";
 import { decryptField, encryptField } from "../utils/encryptHelper.js";
 import { logger } from "../utils/logger.js";
@@ -10,11 +11,58 @@ async function fetchPendingMails() {
     const pendingMails = await EmailModel.find({
       toSummarize: true,
       isSummarized: false,
-    });
+    }).populate('user', 'email');
+    
     logger.info(
       `Fetched ${pendingMails.length} pending mails for summarization.`
     );
-    return pendingMails;
+    
+    // Filter out emails from excluded senders
+    const filteredMails = [];
+    for (const mail of pendingMails) {
+      try {
+        // Get user config to check excluded emails
+        const userConfig = await UserConfigModel.findOne({ user: mail.user._id });
+        
+        if (!userConfig || !userConfig.excludedEmailsToSummarize || userConfig.excludedEmailsToSummarize.length === 0) {
+          filteredMails.push(mail);
+          continue;
+        }
+        
+        // Decrypt the 'from' field to check against exclusion list
+        const fromEmail = decryptField(mail.from).toLowerCase();
+        
+        // Extract email address (in case it's in "Name <email@example.com>" format)
+        const emailMatch = fromEmail.match(/<(.+?)>/) || [null, fromEmail];
+        const senderEmail = emailMatch[1].trim();
+        
+        // Check if sender is in the exclusion list
+        const isExcluded = userConfig.excludedEmailsToSummarize.some(
+          excludedEmail => senderEmail.includes(excludedEmail.toLowerCase())
+        );
+        
+        if (!isExcluded) {
+          filteredMails.push(mail);
+        } else {
+          logger.info(`🚫 Excluding email from ${senderEmail} (filtered by user ${mail.user.email})`);
+          // Mark as summarized so it won't be picked up again
+          await EmailModel.updateOne(
+            { _id: mail._id },
+            { $set: { toSummarize: false, isSummarized: true } }
+          );
+        }
+      } catch (err) {
+        logger.error(`❌ Error filtering mail ${mail._id}: ${err.message}`);
+        // Include the mail if there's an error in filtering
+        filteredMails.push(mail);
+      }
+    }
+    
+    logger.info(
+      `After filtering: ${filteredMails.length} mails to summarize (${pendingMails.length - filteredMails.length} filtered out)`
+    );
+    
+    return filteredMails;
   } catch (error) {
     logger.error(`❌ Error fetching pending mails: ${error.message}`);
     return [];
