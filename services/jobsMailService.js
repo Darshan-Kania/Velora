@@ -44,7 +44,6 @@ async function fetchPendingMails() {
         if (!isExcluded) {
           filteredMails.push(mail);
         } else {
-          logger.info(`🚫 Excluding email from ${senderEmail} (filtered by user ${mail.user.email})`);
           // Mark as summarized so it won't be picked up again
           await EmailModel.updateOne(
             { _id: mail._id },
