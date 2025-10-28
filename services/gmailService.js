@@ -261,55 +261,62 @@ async function extractMessageData(historyRes, gmail, user) {
       if (record.messagesAdded) {
         for (const added of record.messagesAdded) {
           const msgId = added.message.id;
-          const msgRes = await gmail.users.messages.get({
-            userId: "me",
-            id: msgId,
-            format: "full",
-          });
+          
+          try {
+            const msgRes = await gmail.users.messages.get({
+              userId: "me",
+              id: msgId,
+              format: "full",
+            });
 
-          const payload = msgRes.data.payload || {};
-          const headers = payload.headers || [];
-          const getHeader = (name) =>
-            headers.find((h) => h.name.toLowerCase() === name.toLowerCase())
-              ?.value || "";
+            const payload = msgRes.data.payload || {};
+            const headers = payload.headers || [];
+            const getHeader = (name) =>
+              headers.find((h) => h.name.toLowerCase() === name.toLowerCase())
+                ?.value || "";
 
-          let bodyPlain = "";
-          let bodyHtml = "";
+            let bodyPlain = "";
+            let bodyHtml = "";
 
-          if (payload.parts) {
-            for (const part of payload.parts) {
-              if (part.mimeType === "text/plain" && part.body?.data) {
-                bodyPlain += decodeBase64Url(part.body.data);
+            if (payload.parts) {
+              for (const part of payload.parts) {
+                if (part.mimeType === "text/plain" && part.body?.data) {
+                  bodyPlain += decodeBase64Url(part.body.data);
+                }
+                if (part.mimeType === "text/html" && part.body?.data) {
+                  bodyHtml += decodeBase64Url(part.body.data);
+                }
               }
-              if (part.mimeType === "text/html" && part.body?.data) {
-                bodyHtml += decodeBase64Url(part.body.data);
-              }
+            } else if (payload.body?.data) {
+              bodyPlain = decodeBase64Url(payload.body.data);
             }
-          } else if (payload.body?.data) {
-            bodyPlain = decodeBase64Url(payload.body.data);
-          }
 
-          const emailDoc = {
-            user: user._id,
-            gmailMessageId: msgId,
-            threadId: msgRes.data.threadId,
-            historyId: msgRes.data.historyId,
-            labelIds: msgRes.data.labelIds,
-            from: getHeader("From"),
-            to: getHeader("To"),
-            subject: getHeader("Subject"),
-            snippet: msgRes.data.snippet,
-            bodyPlain,
-            bodyHtml,
-            receivedAt: new Date(getHeader("Date")),
-            toSummarize: true,
-            isSummarized: false,
-            toAutoReply: false,
-            isReplyBacked: false,
-            isAutoReplied: false,
-          };
-          const encryptedEmailDoc = encryptionBeforeStoring(emailDoc);
-          messages.push(encryptedEmailDoc);
+            const emailDoc = {
+              user: user._id,
+              gmailMessageId: msgId,
+              threadId: msgRes.data.threadId,
+              historyId: msgRes.data.historyId,
+              labelIds: msgRes.data.labelIds,
+              from: getHeader("From"),
+              to: getHeader("To"),
+              subject: getHeader("Subject"),
+              snippet: msgRes.data.snippet,
+              bodyPlain,
+              bodyHtml,
+              receivedAt: new Date(getHeader("Date")),
+              toSummarize: true,
+              isSummarized: false,
+              toAutoReply: false,
+              isReplyBacked: false,
+              isAutoReplied: false,
+            };
+            const encryptedEmailDoc = encryptionBeforeStoring(emailDoc);
+            messages.push(encryptedEmailDoc);
+          } catch (msgError) {
+            // Handle case where message no longer exists (deleted, moved, etc.)
+            logger.warn(`⚠️ Skipping message ${msgId}: ${msgError.message}`);
+            continue;
+          }
         }
       }
     }
