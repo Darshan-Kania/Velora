@@ -11,7 +11,7 @@ const replyBackEmailSchema = new mongoose.Schema(
     originalEmail: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Email",
-      required: true,
+      required: false, // Optional: null for composed emails, set for replies
     },
     gmailMessageId: {
       type: String,

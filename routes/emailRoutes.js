@@ -4,7 +4,9 @@ const router = Router();
 import { EmailModel } from "../models/Email.js";
 import { UserModel } from "../models/User.js";
 import { SummarizedEmailModel } from "../models/summarizedEmail.js";
+import { ReplyBackEmailModel } from "../models/replyBackEmail.js";
 import { decryptEmails,safeDecrypt } from "../services/dashboardService.js";
+import { decryptField } from "../utils/encryptHelper.js";
 import { replyToEmail, composeEmail } from "../controllers/emailController.js";
 router.get("/", async (req, res) => {
   try {
@@ -50,13 +52,14 @@ router.get("/", async (req, res) => {
 // Get sent emails - MUST BE BEFORE /:id route
 router.get("/sent", async (req, res) => {
   try {
-    const { ReplyBackEmailModel } = await import("../models/replyBackEmail.js");
+    logger.info(`📤 Fetching sent emails for user: ${req.user.email}`);
     
     // Resolve user _id from JWT email
     const user = await UserModel.findOne({ email: req.user.email }).select(
       "_id email"
     );
     if (!user) {
+      logger.warn(`⚠️ User not found: ${req.user.email}`);
       return res
         .status(404)
         .json({ success: false, message: "User not found" });
@@ -66,6 +69,8 @@ router.get("/sent", async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
+
+    logger.info(`🔍 Querying ReplyBackEmailModel for user: ${user._id}`);
 
     // Fetch sent emails and total count
     let [sentEmails, total] = await Promise.all([
@@ -77,8 +82,9 @@ router.get("/sent", async (req, res) => {
       ReplyBackEmailModel.countDocuments({ user: user._id }),
     ]);
 
+    logger.info(`✅ Found ${total} sent emails, returning ${sentEmails.length} for current page`);
+
     // Decrypt sensitive fields
-    const { decryptField } = await import("../utils/encryptHelper.js");
     sentEmails = sentEmails.map(email => {
       const decrypted = email.toObject();
       if (decrypted.to) decrypted.to = decryptField(decrypted.to);

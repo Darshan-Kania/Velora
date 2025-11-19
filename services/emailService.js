@@ -118,6 +118,7 @@ async function sendReplyEmail(userEmail, emailId, replyBody) {
     logger.info(`✅ Reply sent successfully: ${response.data.id}`);
     
     // Store reply in database
+    logger.info(`💾 Storing reply in database for user: ${user._id}`);
     const replyDoc = new ReplyBackEmailModel({
       user: user._id,
       originalEmail: originalEmail._id,
@@ -131,12 +132,14 @@ async function sendReplyEmail(userEmail, emailId, replyBody) {
     });
     
     await replyDoc.save();
+    logger.info(`✅ Reply saved to database with ID: ${replyDoc._id}`);
     
     // Update original email status
     await EmailModel.updateOne(
       { _id: emailId },
       { $set: { isReplyBacked: true } }
     );
+    logger.info(`✅ Original email marked as replied`);
     
     return {
       success: true,
@@ -192,6 +195,25 @@ async function composeAndSendEmail(userEmail, { to, cc, bcc, subject, body }) {
     });
     
     logger.info(`✅ Email sent successfully: ${response.data.id}`);
+    
+    // Store composed email in database
+    logger.info(`💾 Storing composed email in database for user: ${user._id}`);
+    const composeDoc = new ReplyBackEmailModel({
+      user: user._id,
+      originalEmail: null, // No original email for composed messages
+      gmailMessageId: response.data.id,
+      threadId: response.data.threadId || response.data.id,
+      to: encryptField(to),
+      cc: cc ? encryptField(cc) : null,
+      bcc: bcc ? encryptField(bcc) : null,
+      subject: encryptField(subject),
+      body: encryptField(body),
+      sentAt: new Date(),
+      isAIGenerated: false,
+    });
+    
+    await composeDoc.save();
+    logger.info(`✅ Composed email saved to database with ID: ${composeDoc._id}`);
     
     return {
       success: true,
