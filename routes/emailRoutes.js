@@ -138,18 +138,68 @@ router.get("/:id", async (req, res) => {
     // Decrypt sensitive fields (returns an array)
     const [decryptedEmail] = await decryptEmails([email]);
 
-    if (summaryDoc?.summary) {
-      summaryDoc.summary = summaryDoc.summary
-        ? safeDecrypt(summaryDoc.summary)
-        : summaryDoc.summary;
-      decryptedEmail.summary = summaryDoc.summary;
+    if (summaryDoc) {
+      if (summaryDoc.summary) {
+        summaryDoc.summary = summaryDoc.summary
+          ? safeDecrypt(summaryDoc.summary)
+          : summaryDoc.summary;
+        decryptedEmail.summary = summaryDoc.summary;
+      }
+      
+      if (summaryDoc.explaination) {
+        decryptedEmail.explaination = safeDecrypt(summaryDoc.explaination);
+      }
+      
+      // Decrypt replyBack array
+      if (summaryDoc.replyBack && Array.isArray(summaryDoc.replyBack)) {
+        decryptedEmail.aiReplies = summaryDoc.replyBack.map(reply => ({
+          tone: reply.tone,
+          text: safeDecrypt(reply.text)
+        }));
+      }
     }
+    
     res.json({
       success: true,
       data: decryptedEmail,
     });
   } catch (err) {
     logger.error('❌ Fetch email error:', err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+// Mark email as read
+router.patch("/:id/read", async (req, res) => {
+  try {
+    const emailId = req.params.id;
+
+    // Resolve user _id from JWT email
+    const user = await UserModel.findOne({ email: req.user.email }).select("_id email");
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // Update email read status
+    const email = await EmailModel.findOneAndUpdate(
+      { _id: emailId, user: user._id },
+      { $set: { isRead: true } },
+      { new: true }
+    );
+
+    if (!email) {
+      return res.status(404).json({ success: false, message: "Email not found" });
+    }
+
+    logger.info(`✅ Email ${emailId} marked as read by ${user.email}`);
+
+    res.json({
+      success: true,
+      message: "Email marked as read",
+      data: { isRead: email.isRead }
+    });
+  } catch (err) {
+    logger.error('❌ Mark as read error:', err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 });

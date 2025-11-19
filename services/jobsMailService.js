@@ -122,6 +122,7 @@ async function storeSummarizedMails(summarizedMails) {
             $set: {
               summary: mail.summary,
               explaination: mail.explaination || "",
+              replyBack: mail.replyBack || [],
             },
           },
           { upsert: true }
@@ -154,6 +155,13 @@ function encryptSummarizedMail(mail) {
     mail.summary = encryptField(mail.summary);
     if (mail.explaination) {
       mail.explaination = encryptField(mail.explaination);
+    }
+    // Encrypt each reply text in the replyBack array
+    if (mail.replyBack && Array.isArray(mail.replyBack)) {
+      mail.replyBack = mail.replyBack.map(reply => ({
+        tone: reply.tone,
+        text: encryptField(reply.text)
+      }));
     }
     return mail;
   } catch (error) {

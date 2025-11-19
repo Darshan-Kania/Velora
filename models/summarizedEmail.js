@@ -14,6 +14,17 @@ const summarizedEmailSchema = new mongoose.Schema({
         type: String,
         required: false
     },
+    replyBack: [{
+        tone: {
+            type: String,
+            required: true,
+            enum: ['Friendly', 'Neutral', 'Formal']
+        },
+        text: {
+            type: String,
+            required: true
+        }
+    }],
 }, { timestamps: true });
 
 export const SummarizedEmailModel = mongoose.model('SummarizedEmail', summarizedEmailSchema);
