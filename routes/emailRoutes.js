@@ -152,10 +152,14 @@ router.get("/:id", async (req, res) => {
       
       // Decrypt replyBack array
       if (summaryDoc.replyBack && Array.isArray(summaryDoc.replyBack)) {
-        decryptedEmail.aiReplies = summaryDoc.replyBack.map(reply => ({
-          tone: reply.tone,
-          text: safeDecrypt(reply.text)
-        }));
+        decryptedEmail.aiReplies = summaryDoc.replyBack
+          .filter(reply => reply && reply.tone && reply.text)
+          .map(reply => ({
+            tone: String(reply.tone),
+            text: String(safeDecrypt(reply.text))
+          }));
+        
+        logger.info(`✅ Loaded ${decryptedEmail.aiReplies.length} AI replies for email ${emailId}`);
       }
     }
     
