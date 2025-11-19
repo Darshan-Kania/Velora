@@ -154,6 +154,42 @@ router.get("/:id", async (req, res) => {
   }
 });
 
+// Mark email as important/unimportant
+router.patch("/:id/important", async (req, res) => {
+  try {
+    const emailId = req.params.id;
+    const { important } = req.body;
+
+    // Resolve user _id from JWT email
+    const user = await UserModel.findOne({ email: req.user.email }).select("_id email");
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // Update email important status
+    const email = await EmailModel.findOneAndUpdate(
+      { _id: emailId, user: user._id },
+      { $set: { important: important === true } },
+      { new: true }
+    );
+
+    if (!email) {
+      return res.status(404).json({ success: false, message: "Email not found" });
+    }
+
+    logger.info(`✅ Email ${emailId} marked as ${important ? 'important' : 'not important'}`);
+
+    res.json({
+      success: true,
+      message: `Email marked as ${important ? 'important' : 'not important'}`,
+      data: { important: email.important }
+    });
+  } catch (err) {
+    logger.error('❌ Mark important error:', err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
 // Reply to an email
 router.post("/:id/reply", replyToEmail);
 

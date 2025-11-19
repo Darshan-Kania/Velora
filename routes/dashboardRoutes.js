@@ -69,7 +69,113 @@ router.get("/topContacts", async (req, res) => {
   res.status(200).send("Top contacts endpoint - to be implemented");
 }); 
 router.get("/activity", async (req, res) => {
-  res.status(200).send("To be implemented");
+  try {
+    const user = await UserModel.findOne({ email: req.user.email }).select("_id email");
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const range = req.query.range || 'week'; // 'week', 'month', 'year'
+    
+    // Calculate date ranges
+    const now = new Date();
+    let startDate, groupFormat, daysBack;
+    
+    if (range === 'week') {
+      daysBack = 7;
+      startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      groupFormat = 'day'; // Group by day name (Mon, Tue, etc.)
+    } else if (range === 'month') {
+      daysBack = 30;
+      startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      groupFormat = 'date'; // Group by date
+    } else if (range === 'year') {
+      daysBack = 365;
+      startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+      groupFormat = 'month'; // Group by month
+    }
+
+    // Aggregate emails by date
+    const emailsByDate = await EmailModel.aggregate([
+      {
+        $match: {
+          user: user._id,
+          createdAt: { $gte: startDate }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            $dateToString: {
+              format: range === 'week' ? '%Y-%m-%d' : 
+                      range === 'month' ? '%Y-%m-%d' : 
+                      '%Y-%m',
+              date: '$createdAt'
+            }
+          },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { _id: 1 }
+      }
+    ]);
+
+    // Transform data based on range
+    let activity = [];
+    
+    if (range === 'week') {
+      // Generate last 7 days with day names
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+        const dateStr = date.toISOString().split('T')[0];
+        const dayName = days[date.getDay()];
+        const found = emailsByDate.find(item => item._id === dateStr);
+        activity.push({
+          day: dayName,
+          date: dateStr,
+          emails: found ? found.count : 0
+        });
+      }
+    } else if (range === 'month') {
+      // Generate last 30 days
+      for (let i = 29; i >= 0; i--) {
+        const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+        const dateStr = date.toISOString().split('T')[0];
+        const found = emailsByDate.find(item => item._id === dateStr);
+        activity.push({
+          day: `${date.getDate()}/${date.getMonth() + 1}`,
+          date: dateStr,
+          emails: found ? found.count : 0
+        });
+      }
+    } else if (range === 'year') {
+      // Generate last 12 months
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      for (let i = 11; i >= 0; i--) {
+        const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const monthStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        const found = emailsByDate.find(item => item._id === monthStr);
+        activity.push({
+          day: `${months[date.getMonth()]} ${date.getFullYear()}`,
+          date: monthStr,
+          emails: found ? found.count : 0
+        });
+      }
+    }
+
+    logger.info(`✅ Fetched activity data for ${user.email}`, { range, count: activity.length });
+    
+    res.json({
+      success: true,
+      activity,
+      range
+    });
+  } catch (err) {
+    logger.error("❌ Activity data error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
 });
 
 // Get user's email filters
