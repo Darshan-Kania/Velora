@@ -1,177 +1,313 @@
-# 📬 MailFlare — Your Smart AI-Powered Email Assistant! ✨
+# Velora Backend – MailFlare API Server
 
-Welcome to **MailFlare**, the future of email management! 🚀 Imagine having **all your emails summarized** before you even open your inbox — with suggested replies ready to go at the click of a button. MailFlare uses cutting-edge AI to save your time, boost your productivity, and keep your inbox under control. 🎯
-
----
-
-## 🔥 What is MailFlare?
-
-MailFlare is a smart mailing system built on the MERN stack:
-
-* **Frontend:** Lyra
-* **Backend:** Velora
-* **AI Workflows:** n8n automation for email summarization & reply drafts
-* **Database:** MongoDB to securely store emails, summaries & draft replies
-* **Security:** Strong encryption, authentication, and privacy-first design
-* **Authentication:** Google OAuth for secure user login
-* **Hosting:** Hosted on AWS for reliable and scalable deployment
-* **Logging:** Winston logger with daily log rotation and error-level separation
-
-**Key Features:**
-
-* 📩 Fetches all incoming emails via a secure webhook
-* 🧠 Summarizes emails using AI workflows in n8n
-* ✍️ Generates intelligent draft replies for you
-* 🚫 Allows filtering emails by sender ID to exclude AI processing
-* 📋 User dashboard to view summaries, filter emails & send replies with one click
-* 🔒 End-to-end secure handling — your data stays private and protected!
-* 🔑 Secure Google OAuth sign-in to protect user accounts
-* ☁️ Robust cloud hosting on AWS ensuring uptime and scalability
-* 📜 Logging with Winston and Daily Rotate File — stores logs by date, compresses old logs, and tracks errors & events
+This is the **official, clean, rewritten, production‑ready README** for the **MailFlare Backend (Velora)**, fully updated according to the complete system description you provided above.
 
 ---
 
-## 🛠 Installation, Hosting & Setup
+# 🚀 Velora – Backend API for MailFlare
 
-1. **Clone the backend Velora repo**
-2. Configure `.env` with your email credentials, webhook secrets, n8n API keys, MongoDB URI, and Google OAuth credentials
-3. Set up your email provider to forward incoming emails to your backend’s webhook endpoint
-4. Deploy your MongoDB (preferably MongoDB Atlas)
-5. Deploy backend and frontend on AWS EC2 or Lightsail:
+**Velora** is the backend engine powering **MailFlare**, the AI‑driven email productivity platform. Built with **Node.js + Express**, Velora manages authentication, secure Gmail integration, webhook ingestion, AI processing pipelines, cron jobs, encryption, and API delivery to the React frontend.
 
-   * Create and configure an EC2 instance or Lightsail VM
-   * Install Node.js, NPM, and Git
-   * Clone your repos, install dependencies (`npm install`), and build frontend (`npm run build`)
-   * Use Nginx as a reverse proxy and PM2 to keep apps running
-   * Configure HTTPS with Let’s Encrypt SSL certificates
-6. Set up Google OAuth Credentials in Google Cloud Console, get Client ID & Secret
-7. Integrate Google OAuth in your backend (Velora) and frontend (Lyra) for secure login
-8. Deploy and configure n8n workflows for:
-
-   * Email summarization
-   * Draft reply generation
-9. Setup Winston Logging:
-
-   * Install `winston` and `winston-daily-rotate-file`
-   * Configure logger with timestamped format and rotation logic
-   * Store logs in `/logs/%DATE%.log` and rotate them daily, keep for 14 days
-   * Log both to file and console in production
-10. Start backend server and connect your frontend Lyra app
-11. Launch frontend and log in to your dashboard with Google account
+Velora connects Google OAuth, Gmail API, Google Pub/Sub, N8N AI workflows, MongoDB Atlas, and AWS infrastructure into one secure and scalable API service.
 
 ---
 
-## 🚦 How It Works (Step-by-Step)
+# 📌 Features
 
-1. Incoming email arrives → forwarded securely to MailFlare backend webhook
-2. Backend validates & filters email based on user-defined **sender exclusion list**
-3. Allowed emails are passed to n8n workflows:
+### 🔐 Authentication
 
-   * Summarized by AI
-   * Draft reply generated
-4. Store summary & reply draft in MongoDB
-5. User sees emails & summaries in the dashboard, with drafts ready to send
-6. User clicks **Send** → backend sends the reply email for you
-7. User logs in securely each time via Google OAuth
-8. Winston logs every email fetch, processing step, and errors to log files by date
+* Google OAuth 2.0 login
+* JWT-based session tokens (httpOnly cookie)
+* Encrypted OAuth access & refresh tokens
+* Automatic token refresh (cron)
 
----
+### 📬 Gmail Integration
 
-## 🖼 Dashboard Highlights
+* Gmail Watch API
+* Google Pub/Sub webhook handling
+* History API incremental sync
+* Real-time email ingestion
+* Full email metadata + body fetching
 
-* ✨ View all incoming emails with neat AI summaries
-* 🚫 Easily add/remove email addresses from the **AI-exempt filter** — emails from these senders won’t be processed or summarized
-* 📧 Preview and edit AI-generated draft replies
-* 📨 One-click send button to reply instantly
-* 🔒 Fully secure and private — no data leaks!
-* 🔑 Google sign-in for seamless & secure access
+### 🧠 AI Processing
 
----
+* Integration with N8N (DigitalOcean) using JWT-authenticated webhooks
+* Google Gemini for:
 
+  * Email summarization
+  * Context-aware reply suggestions (3 tones)
+* Dual LLM chain load balancing
+* Batch summarization every 30 seconds
 
-## � API Endpoints
+### 🗄 Database Layer
 
-### Auth
-- `GET /auth/google` — Initiate Google OAuth login
-- `GET /auth/google/callback` — Google OAuth callback
-- `GET /auth/error401` — Unauthorized error
-- `PATCH /auth/logout` — Logout user
-- `GET /auth/status` — Check authentication status
+* MongoDB Atlas
+* AES‑256‑GCM encryption for sensitive fields
+* Collections:
 
-### Dashboard
-- `GET /dashboard/` — Welcome message (requires auth)
-- `GET /dashboard/userProfile` — Get user profile
-- `GET /dashboard/EmailCount` — Get total email count (supports `?label=unread` and `?label=today`)
-- `GET /dashboard/topContacts` — (To be implemented)
-- `GET /dashboard/activity` — (To be implemented)
+  * users
+  * userconfigs
+  * emails
+  * summarizedemails
+  * replybackemails
 
-### Email
-- `GET /emails/` — Get paginated emails for user
-- `GET /emails/:id` — Get a specific email (with summary)
+### ⚙️ Cron Jobs
 
-### Gmail
-- `POST /gmail/notifications` — Gmail Pub/Sub webhook endpoint
+| Job                 | Interval     | Purpose                        |
+| ------------------- | ------------ | ------------------------------ |
+| Email Summarization | Every 30 sec | AI processing pipeline         |
+| Token Refresh       | Every 25 min | Keeps Gmail access valid       |
+| Gmail Watch Renewal | Daily        | Ensures push notifications run |
 
----
+### 📊 Dashboard / Analytics (API)
 
-## 🌐 DNS Management for .tech Domains
+* Inbox, unread, and today’s count
+* Activity graph API
+* Top contacts API
 
-To use your .tech domain (e.g., `mailflare.tech`) for MailFlare, you need to configure DNS records:
+### 🔒 Security
 
-1. **A Record**: Points your domain to your server's public IP address (for backend/frontend hosting)
-   - Example: `@  IN  A  123.45.67.89`
-2. **CNAME Record**: For subdomains (e.g., `www` or `n8n`)
-   - Example: `www  IN  CNAME  mailflare.tech.`
-   - Example: `n8n  IN  CNAME  mailflare.tech.`
-3. **MX Record**: (If you want to receive emails directly)
-   - Example: `@  IN  MX  10 mail.mailflare.tech.`
-4. **TXT Record**: For domain verification, SPF, DKIM, or Google site verification
-   - Example: `@  IN  TXT  "v=spf1 include:_spf.google.com ~all"`
-   - Example: `google-site-verification=...`
-
-**How to update:**
-- Go to your domain registrar (e.g., GoDaddy, Namecheap, or your .tech provider)
-- Find DNS Management or DNS Zone Editor
-- Add or update the above records as needed
-- DNS changes may take up to 24 hours to propagate
-
-**Tip:** For Google OAuth, make sure your domain is added as an authorized domain in Google Cloud Console.
+* AES‑256‑GCM encryption for email content
+* HTTPS/TLS via Nginx + Certbot
+* Access control middleware
+* Pub/Sub message signature validation
+* Secure cookies
 
 ---
 
-At MailFlare, your privacy is our priority:
+# 🛠 Tech Stack
 
-* Use of encrypted HTTPS for all API communication
-* Secure JWT-based user authentication alongside Google OAuth
-* Webhook validation with secret tokens & signatures
-* Least privileged API keys for AI & n8n integrations only
-* Data encrypted at rest in MongoDB
-* No data shared with external parties without your consent
-* AWS hosting with security best practices, firewall, and monitoring
-* Logging system that tracks activity without exposing private data
+### Backend
 
----
+* Node.js + Express 5
+* MongoDB + Mongoose
+* Passport.js (Google OAuth)
+* Google APIs SDK (gmail + oauth)
+* JWT (jsonwebtoken)
+* Winston (with daily rotate logs)
+* Node-Cron
+* Nginx + PM2 (production)
 
-## 🎯 Future Plans & Enhancements
+### External Services
 
-* Multi-language summarization & replies 🌍
-* Customizable AI context & summary length settings 🎛️
-* Email categorization and priority tagging ⚡
-* Smart reminders & follow-up actions 🗓️
-* Additional social login options beyond Google OAuth 🔄
-
----
-
-## ❤️ Contributing
-
-Found a bug or have a feature idea? Pull requests & issues are welcome! Let's make MailFlare the smartest inbox companion together. 🙌
+* Gmail API
+* Google OAuth 2.0
+* Google Cloud Pub/Sub
+* N8N AI Workflow Engine
+* Google Gemini
+* AWS EC2
+* MongoDB Atlas
+* AWS Amplify (Frontend)
 
 ---
 
-## 📧 Contact
+# 🏛 System Architecture
 
-For support or feedback, reach out at **[darshankania2604@gmail.com](mailto:darshankania2604@gmail.com)**
+Velora acts as the **central backend** in the MailFlare ecosystem:
+
+* Receives login requests → OAuth flow with Google
+* Receives Gmail push notifications → Fetches new messages
+* Encrypts + stores email data in MongoDB
+* Queues unsummarized emails for AI
+* Sends email batches to N8N → Gemini processes summary + replies
+* Provides dashboard REST APIs to Lyra frontend
 
 ---
 
-**MailFlare** — Light up your Inbox 🌟, save time & stay ahead of the mail flood!
+# 📡 API Documentation
+
+## 🔐 Authentication
+
+**GET /auth/google** – Start OAuth login
+
+**GET /auth/google/callback** – Process tokens → issue JWT → create user
+
+**GET /auth/status** – Check login session
+
+**PATCH /auth/logout** – End session
+
+---
+
+## 📬 Email APIs
+
+**GET /emails?page&limit** – Paginated emails
+
+**GET /emails/:id** – Full email with summary + AI replies
+
+**PATCH /emails/:id/read** – Mark as read
+
+**PATCH /emails/:id/important** – Toggle important flag
+
+**POST /emails/:id/reply** – Send reply with Gmail API
+
+---
+
+## 📊 Dashboard APIs
+
+**GET /dashboard/userProfile** – User profile
+
+**GET /dashboard/EmailCount?label=unread/today** – Counts
+
+**GET /dashboard/activity** – Graph data
+
+**GET /dashboard/topContacts** – Frequent senders
+
+---
+
+## 📩 Gmail Webhook
+
+**POST /gmail/notifications** – Receives Pub/Sub messages
+
+* Decodes message
+* Fetches updated email via Gmail History API
+* Stores encrypted email
+
+---
+
+# 🔧 Setup & Installation
+
+## 1️⃣ Clone & Install
+
+```bash
+cd Velora
+npm install
+```
+
+## 2️⃣ Configure Environment
+
+Create `.env`:
+
+```env
+PORT=3001
+FRONTEND_URL=https://mailflare.tech
+
+# MongoDB
+MONGO_URI=your_mongodb
+
+# Google OAuth
+GOOGLE_CLIENT_ID=xxx
+GOOGLE_CLIENT_SECRET=xxx
+GOOGLE_CALLBACK_URL=https://api.mailflare.tech/auth/google/callback
+
+# Pub/Sub
+GOOGLE_PUBSUB_TOPIC=projects/.../topics/mailflare-inbox-updates
+
+# JWT
+JWT_SECRET=your_secret
+
+# Encryption
+ENCRYPTION_KEY=32_byte_hex_key
+
+# N8N
+N8N_BASE_URL=https://n8n.mailflare.tech
+N8N_JWT_SECRET=xxx
+```
+
+## 3️⃣ Start Server
+
+```bash
+npm start
+```
+
+---
+
+# 🧠 AI Processing Flow (Backend → N8N → Backend)
+
+1. Cron checks for `toSummarize == true`
+2. Decrypt email body
+3. Select LLM chain (load balanced)
+4. Send POST request to N8N webhook
+5. N8N calls Google Gemini
+6. Returns: summary + 3 reply suggestions
+7. Backend encrypts + stores results
+8. Email becomes available on Lyra dashboard
+
+---
+
+# 📁 Project Structure
+
+```
+Velora/
+├── controllers/
+├── services/
+├── models/
+├── middleware/
+├── routes/
+├── utils/
+│   ├── encryption.js
+│   ├── logger.js
+│   ├── cronJobs.js
+├── logs/
+└── server.js
+```
+
+---
+
+# 🔐 Security Details
+
+* AES‑256‑GCM encryption for email fields
+* OAuth tokens encrypted before DB
+* JWT stored in httpOnly cookie
+* HTTPS enforced
+* N8N webhook protected with signed JWT
+* Only backend can access MongoDB (IP restrictions)
+* Pub/Sub message validation
+
+---
+
+# 📜 Logging (Winston)
+
+* Daily rotate logs
+* JSON logs with timestamps
+* Separate error/info logs
+* Retention: 14 days
+
+---
+
+# 🌐 Deployment Guide
+
+### Backend (AWS EC2)
+
+* Node.js
+* PM2 (process manager)
+* Nginx reverse proxy
+* Certbot SSL
+
+### Frontend (Amplify)
+
+* Auto builds from Git
+* Global CDN
+* Custom domain
+
+### N8N (DigitalOcean)
+
+* Runs workflow engine
+* Gemini integration
+* SSL + Nginx
+
+---
+
+# 🧭 Roadmap
+
+* Redis caching
+* WebSocket live updates
+* Deduplication of webhook events
+* Outlook/Microsoft 365 support
+* Multi-language summarization
+
+---
+
+# 🤝 Contributing
+
+PRs welcome! Please follow code style and include detailed explanations.
+
+---
+
+# 📧 Contact
+
+**Developer:** Darshan Kania
+**Email:** [darshankania2604@gmail.com](mailto:darshankania2604@gmail.com)
+
+---
+
+Velora powers **MailFlare** — Illuminate Your Inbox ⚡
