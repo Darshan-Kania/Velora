@@ -291,6 +291,16 @@ async function extractMessageData(historyRes, gmail, user) {
               bodyPlain = decodeBase64Url(payload.body.data);
             }
 
+            // Skip emails that are only in SENT folder (not in INBOX)
+            const labels = msgRes.data.labelIds || [];
+            const isInInbox = labels.includes('INBOX');
+            const isOnlySent = labels.includes('SENT') && !isInInbox;
+            
+            if (isOnlySent) {
+              logger.info(`⏭️ Skipping sent-only message ${msgId}`);
+              continue;
+            }
+
             const emailDoc = {
               user: user._id,
               gmailMessageId: msgId,
