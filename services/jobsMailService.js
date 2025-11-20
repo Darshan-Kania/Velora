@@ -11,63 +11,70 @@ async function fetchPendingMails() {
     const pendingMails = await EmailModel.find({
       toSummarize: true,
       isSummarized: false,
-    }).populate('user', 'email');
-    
+    }).populate("user", "email");
+
     logger.info(
       `Fetched ${pendingMails.length} pending mails for summarization.`
     );
-    
+
     // Filter out emails from excluded senders
     const filteredMails = [];
     for (const mail of pendingMails) {
       try {
         // Get user config to check excluded emails
-        const userConfig = await UserConfigModel.findOne({ user: mail.user._id });
-        
-        if (!userConfig || !userConfig.excludedEmailsToSummarize || userConfig.excludedEmailsToSummarize.length === 0) {
+        const userConfig = await UserConfigModel.findOne({
+          user: mail.user._id,
+        });
+
+        if (
+          !userConfig ||
+          !userConfig.excludedEmailsToSummarize ||
+          userConfig.excludedEmailsToSummarize.length === 0
+        ) {
           filteredMails.push(mail);
           continue;
         }
-        
+
         // Decrypt the 'from' field to check against exclusion list
         const fromEmail = decryptField(mail.from).toLowerCase();
-        
+
         // Extract email address (in case it's in "Name <email@example.com>" format)
         const emailMatch = fromEmail.match(/<(.+?)>/) || [null, fromEmail];
         const senderEmail = emailMatch[1].trim();
-        
+
         // Check if sender is in the exclusion list
         const isExcluded = userConfig.excludedEmailsToSummarize.some(
-          excludedEmail => senderEmail.includes(excludedEmail.toLowerCase())
+          (excludedEmail) => senderEmail.includes(excludedEmail.toLowerCase())
         );
-        
+
         if (!isExcluded) {
           filteredMails.push(mail);
-        } else {
-          // Mark as summarized so it won't be picked up again
-          await EmailModel.updateOne(
-            { _id: mail._id },
-            { $set: { toSummarize: false, isSummarized: true } }
-          );
         }
+        // Mark All mails as processed regardless of inclusion
+        await EmailModel.updateOne(
+          { _id: mail._id },
+          { $set: { toSummarize: false, isSummarized: true } }
+        );
       } catch (err) {
         logger.error(`❌ Error filtering mail ${mail._id}: ${err.message}`);
         // Include the mail if there's an error in filtering
         filteredMails.push(mail);
       }
     }
-    
+
     logger.info(
-      `After filtering: ${filteredMails.length} mails to summarize (${pendingMails.length - filteredMails.length} filtered out)`
+      `After filtering: ${filteredMails.length} mails to summarize (${
+        pendingMails.length - filteredMails.length
+      } filtered out)`
     );
-    
+
     return filteredMails;
   } catch (error) {
     logger.error(`❌ Error fetching pending mails: ${error.message}`);
     return [];
   }
 }
-async function summarizeMails(pendingMails, chainNo ) {
+async function summarizeMails(pendingMails, chainNo) {
   // Implementation for summarizing mails
   try {
     const decryptedMails = await Promise.all(
@@ -93,12 +100,34 @@ async function summarizeMails(pendingMails, chainNo ) {
       logger.error(
         `❌ N8N API error: ${res.status} ${res.statusText} - ${errorText}`
       );
+      
+      // Mark all pending mails as failed so they can be retried
+      await Promise.all(
+        pendingMails.map(async (mail) => {
+          await EmailModel.updateOne(
+            { _id: mail._id },
+            { $set: { isSummarized: false, toSummarize: true } }
+          );
+        })
+      );
+      
       return [];
     }
     const summarizedMails = await res.json();
     return summarizedMails;
   } catch (error) {
     logger.error(`❌ Error in summarizeMails: ${error.message}`);
+    
+    // Mark all pending mails as failed so they can be retried
+    await Promise.all(
+      pendingMails.map(async (mail) => {
+        await EmailModel.updateOne(
+          { _id: mail._id },
+          { $set: { isSummarized: false, toSummarize: true } }
+        );
+      })
+    );
+    
     return [];
   }
 }
@@ -158,9 +187,9 @@ function encryptSummarizedMail(mail) {
     }
     // Encrypt each reply text in the replyBack array
     if (mail.replyBack && Array.isArray(mail.replyBack)) {
-      mail.replyBack = mail.replyBack.map(reply => ({
+      mail.replyBack = mail.replyBack.map((reply) => ({
         tone: reply.tone,
-        text: encryptField(reply.text)
+        text: encryptField(reply.text),
       }));
     }
     return mail;
